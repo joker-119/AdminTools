@@ -1,0 +1,16 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AdminTools", "AdminTools\AdminTools.csproj", "{560DA2C9-E7A1-42C5-BBD4-5B3C28591593}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{560DA2C9-E7A1-42C5-BBD4-5B3C28591593}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{560DA2C9-E7A1-42C5-BBD4-5B3C28591593}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{560DA2C9-E7A1-42C5-BBD4-5B3C28591593}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{560DA2C9-E7A1-42C5-BBD4-5B3C28591593}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
