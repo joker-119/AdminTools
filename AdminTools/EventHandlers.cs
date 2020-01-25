@@ -851,5 +851,17 @@ namespace AdminTools
 				Plugin.Error($"Round End: {e}");
 			}
 		}
+
+		public void OnTriggerTesla(ref TriggerTeslaEvent ev)
+		{
+			if (ev.Player.characterClassManager.GodMode)
+				ev.Triggerable = false;
+		}
+
+		public void OnSetClass(SetClassEvent ev)
+		{
+			if (plugin.GodTuts) 
+				ev.Player.characterClassManager.GodMode = ev.Role == RoleType.Tutorial;
+		}
 	}
 }

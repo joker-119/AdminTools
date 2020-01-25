@@ -11,6 +11,7 @@ namespace AdminTools
 		public List<Jailed> JailedPlayers = new List<Jailed>();
 		public string OverwatchFilePath;
 		public string HiddenTagsFilePath;
+		public bool GodTuts = true;
 		
 		public override void OnEnable()
 		{
@@ -19,6 +20,8 @@ namespace AdminTools
 			string path = Path.Combine(pluginPath, "AdminTools");
 			string overwatchFileName = Path.Combine(path, "AdminTools-Overwatch.txt");
 			string hiddenTagFileName = Path.Combine(path, "AdminTools-HiddenTags.txt");
+
+			GodTuts = Config.GetBool("admin_god_tuts", true);
 
 			if (!Directory.Exists(path))
 				Directory.CreateDirectory(path);
@@ -36,6 +39,8 @@ namespace AdminTools
 			Events.RemoteAdminCommandEvent += EventHandlers.OnCommand;
 			Events.PlayerJoinEvent += EventHandlers.OnPlayerJoin;
 			Events.RoundEndEvent += EventHandlers.OnRoundEnd;
+			Events.TriggerTeslaEvent += EventHandlers.OnTriggerTesla;
+			Events.SetClassEvent += EventHandlers.OnSetClass;
 		}
 
 		public override void OnDisable()
@@ -43,6 +48,8 @@ namespace AdminTools
 			Events.RemoteAdminCommandEvent -= EventHandlers.OnCommand;
 			Events.PlayerJoinEvent -= EventHandlers.OnPlayerJoin;
 			Events.RoundEndEvent -= EventHandlers.OnRoundEnd;
+			Events.TriggerTeslaEvent -= EventHandlers.OnTriggerTesla;
+			Events.SetClassEvent -= EventHandlers.OnSetClass;
 			EventHandlers = null;
 		}
 
