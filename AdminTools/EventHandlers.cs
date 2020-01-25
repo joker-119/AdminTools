@@ -53,6 +53,14 @@ namespace AdminTools
 					ev.Sender.RAMessage("Player was kicked.");
 					return;
 				}
+				case "reconnectrs":
+				{
+					foreach (ReferenceHub hub in Plugin.GetHubs())
+						hub.playerStats.RpcRoundrestart(0);
+					Application.Quit();
+					ev.Sender.RAMessage("Restarting server...");
+					return;
+				}
 				case "muteall":
 				{
 					ev.Allow = false;
@@ -481,6 +489,45 @@ namespace AdminTools
 					ev.Sender.RAMessage($"{rh.nicknameSync.MyNick} size set to {scale}");
 					return;
 				}
+				case "size":
+				{
+					ev.Allow = false;
+					if (args.Length < 5)
+					{
+						ev.Sender.RAMessage("You must provide a target, x size, y size and z size.", false);
+						return;
+					}
+
+					if (!float.TryParse(args[2], out float x))
+					{
+						ev.Sender.RAMessage($"Invalid x size: {args[2]}", false);
+						return;
+					}
+
+					if (!float.TryParse(args[3], out float y))
+					{
+						ev.Sender.RAMessage($"Invalid y size: {args[3]}", false);
+						return;
+					}
+
+					if (!float.TryParse(args[4], out float z))
+					{
+						ev.Sender.RAMessage($"Invalid z size: {args[4]}", false);
+						return;
+					}
+
+					ReferenceHub rh = Plugin.GetPlayer(args[1]);
+
+					if (rh == null)
+					{
+						ev.Sender.RAMessage($"Player not found: {args[1]}", false);
+						return;
+					}
+					
+					SetPlayerScale(rh.gameObject, x, y, z);
+					ev.Sender.RAMessage($"{rh.nicknameSync.MyNick}'s size has been changed.");
+					return;
+				}
 			}
 		}
 		
@@ -491,6 +538,9 @@ namespace AdminTools
 		
 		private IEnumerator<float> DoTut(ReferenceHub rh)
 		{
+			if (rh.serverRoles.OverwatchEnabled)
+				rh.serverRoles.OverwatchEnabled = false;
+			
         	rh.characterClassManager.SetPlayersClass(RoleType.Tutorial, rh.gameObject, true);
         	yield return Timing.WaitForSeconds(1f);
         	var d = UnityEngine.Object.FindObjectsOfType<Door>();
@@ -631,6 +681,38 @@ namespace AdminTools
 			}
     }
 		
+		public void SetPlayerScale(GameObject target, float x, float y, float z)
+		{
+			try
+			{ 
+				NetworkIdentity identity = target.GetComponent<NetworkIdentity>();
+
+
+				target.transform.localScale = new Vector3(1 * x, 1 * y, 1 * z);
+
+				ObjectDestroyMessage destroyMessage = new ObjectDestroyMessage();
+				destroyMessage.netId = identity.netId;
+				
+				
+				foreach (GameObject player in PlayerManager.players)
+				{
+					if (player == target)
+						continue;
+					
+					NetworkConnection playerCon = player.GetComponent<NetworkIdentity>().connectionToClient;
+
+					playerCon.Send(destroyMessage, 0);
+					
+					object[] parameters = new object[] {identity, playerCon};
+					typeof(NetworkServer).InvokeStaticMethod("SendSpawnMessage", parameters);
+				}
+			}
+			catch (Exception e)
+			{
+				Plugin.Info($"Set Scale error: {e}");
+			}
+		}
+		
 		public void SetPlayerScale(GameObject target, float scale)
 		{
 			try
@@ -638,7 +720,7 @@ namespace AdminTools
 				NetworkIdentity identity = target.GetComponent<NetworkIdentity>();
 
 
-				target.transform.localScale *= scale;
+				target.transform.localScale = Vector3.one * scale;
 
 				ObjectDestroyMessage destroyMessage = new ObjectDestroyMessage();
 				destroyMessage.netId = identity.netId;
@@ -697,6 +779,8 @@ namespace AdminTools
 					Role = rh.characterClassManager.CurClass,
 					Userid = rh.characterClassManager.UserId,
 				});
+			if (rh.serverRoles.OverwatchEnabled)
+				rh.serverRoles.OverwatchEnabled = false;
 			yield return Timing.WaitForSeconds(1f);
 			rh.characterClassManager.SetClassID(RoleType.Tutorial);
 			rh.gameObject.transform.position = new Vector3(53f, 1020f, -44f);
@@ -718,8 +802,54 @@ namespace AdminTools
 
 		public void OnPlayerJoin(PlayerJoinEvent ev)
 		{
-			if (plugin.JailedPlayers.Any(j => j.Userid == ev.Player.characterClassManager.UserId))
-				Timing.RunCoroutine(DoJail(ev.Player, true));
+			try
+			{
+				if (plugin.JailedPlayers.Any(j => j.Userid == ev.Player.characterClassManager.UserId))
+					Timing.RunCoroutine(DoJail(ev.Player, true));
+
+				if (File.ReadAllText(plugin.OverwatchFilePath).Contains(ev.Player.characterClassManager.UserId))
+					ev.Player.serverRoles.OverwatchEnabled = true;
+				if (File.ReadAllText(plugin.HiddenTagsFilePath).Contains(ev.Player.characterClassManager.UserId))
+				{
+					ev.Player.serverRoles._hideLocalBadge = true;
+					ev.Player.serverRoles.RefreshHiddenTag();
+				}
+			}
+			catch (Exception e)
+			{
+				Plugin.Error($"Player Join: {e}");
+			}
+		}
+
+		public void OnRoundEnd()
+		{
+			try
+			{
+				List<string> overwatchRead = File.ReadAllLines(plugin.OverwatchFilePath).ToList();
+				List<string> tagsRead = File.ReadAllLines(plugin.HiddenTagsFilePath).ToList();
+
+				foreach (ReferenceHub hub in Plugin.GetHubs())
+				{
+					string userId = hub.characterClassManager.UserId;
+
+					if (hub.serverRoles.OverwatchEnabled && !overwatchRead.Contains(userId))
+						overwatchRead.Add(userId);
+					else if (!hub.serverRoles.OverwatchEnabled && overwatchRead.Contains(userId))
+						overwatchRead.Remove(userId);
+
+					if (hub.serverRoles._hideLocalBadge && !tagsRead.Contains(userId))
+						tagsRead.Add(userId);
+					else if (!hub.serverRoles._hideLocalBadge && tagsRead.Contains(userId))
+						tagsRead.Remove(userId);
+				}
+
+				File.WriteAllLines(plugin.OverwatchFilePath, overwatchRead);
+				File.WriteAllLines(plugin.HiddenTagsFilePath, tagsRead);
+			}
+			catch (Exception e)
+			{
+				Plugin.Error($"Round End: {e}");
+			}
 		}
 	}
 }
