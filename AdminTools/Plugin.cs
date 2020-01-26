@@ -11,36 +11,50 @@ namespace AdminTools
 		public List<Jailed> JailedPlayers = new List<Jailed>();
 		public string OverwatchFilePath;
 		public string HiddenTagsFilePath;
-		public bool GodTuts = true;
+		public bool GodTuts;
+		public static bool Scp049Speak;
 		
 		public override void OnEnable()
 		{
-			string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-			string pluginPath = Path.Combine(appData, "Plugins");
-			string path = Path.Combine(pluginPath, "AdminTools");
-			string overwatchFileName = Path.Combine(path, "AdminTools-Overwatch.txt");
-			string hiddenTagFileName = Path.Combine(path, "AdminTools-HiddenTags.txt");
+			try
+			{
+				string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+				string pluginPath = Path.Combine(appData, "Plugins");
+				string path = Path.Combine(pluginPath, "AdminTools");
+				string overwatchFileName = Path.Combine(path, "AdminTools-Overwatch.txt");
+				string hiddenTagFileName = Path.Combine(path, "AdminTools-HiddenTags.txt");
 
+				ReloadConfigs();
+
+				if (!Directory.Exists(path))
+					Directory.CreateDirectory(path);
+
+				if (!File.Exists(overwatchFileName))
+					File.Create(overwatchFileName).Close();
+
+				if (!File.Exists(hiddenTagFileName))
+					File.Create(hiddenTagFileName).Close();
+
+				OverwatchFilePath = overwatchFileName;
+				HiddenTagsFilePath = hiddenTagFileName;
+
+				EventHandlers = new EventHandlers(this);
+				Events.RemoteAdminCommandEvent += EventHandlers.OnCommand;
+				Events.PlayerJoinEvent += EventHandlers.OnPlayerJoin;
+				Events.RoundEndEvent += EventHandlers.OnRoundEnd;
+				Events.TriggerTeslaEvent += EventHandlers.OnTriggerTesla;
+				Events.SetClassEvent += EventHandlers.OnSetClass;
+			}
+			catch (Exception e)
+			{
+				Error($"Loading error: {e}");
+			}
+		}
+
+		private void ReloadConfigs()
+		{
 			GodTuts = Config.GetBool("admin_god_tuts", true);
-
-			if (!Directory.Exists(path))
-				Directory.CreateDirectory(path);
-			
-			if (!File.Exists(overwatchFileName))
-				File.Create(overwatchFileName).Close();
-			
-			if (!File.Exists(hiddenTagFileName))
-				File.Create(hiddenTagFileName).Close();
-
-			OverwatchFilePath = overwatchFileName;
-			HiddenTagsFilePath = hiddenTagFileName;
-			
-			EventHandlers = new EventHandlers(this);
-			Events.RemoteAdminCommandEvent += EventHandlers.OnCommand;
-			Events.PlayerJoinEvent += EventHandlers.OnPlayerJoin;
-			Events.RoundEndEvent += EventHandlers.OnRoundEnd;
-			Events.TriggerTeslaEvent += EventHandlers.OnTriggerTesla;
-			Events.SetClassEvent += EventHandlers.OnSetClass;
+			Scp049Speak = Config.GetBool("admin_scp049_speech", true);
 		}
 
 		public override void OnDisable()
