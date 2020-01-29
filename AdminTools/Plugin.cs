@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using EXILED;
+using Harmony;
 
 namespace AdminTools
 {
@@ -13,6 +14,7 @@ namespace AdminTools
 		public string HiddenTagsFilePath;
 		public bool GodTuts;
 		public static bool Scp049Speak;
+		public static int PatchCounter;
 		
 		public override void OnEnable()
 		{
@@ -44,6 +46,8 @@ namespace AdminTools
 				Events.RoundEndEvent += EventHandlers.OnRoundEnd;
 				Events.TriggerTeslaEvent += EventHandlers.OnTriggerTesla;
 				Events.SetClassEvent += EventHandlers.OnSetClass;
+				HarmonyInstance instance = HarmonyInstance.Create($"com.joker.admintools.{PatchCounter}");
+				instance.PatchAll();
 			}
 			catch (Exception e)
 			{

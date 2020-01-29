@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using EXILED;
+using GameCore;
 using MEC;
 using Mirror;
 using UnityEngine;
@@ -551,27 +552,36 @@ namespace AdminTools
 						if (args.Length < 5)
 						{
 							ev.Sender.RAMessage("Invalid number of arguments.", false);
+							return;
 						}
 
 						if (!float.TryParse(args[2], out float x))
 						{
-							ev.Sender.RAMessage($"Invalid x size: {args[1]}", false);
+							ev.Sender.RAMessage($"Invalid x size: {args[2]}", false);
 							return;
 						}
 
 						if (!float.TryParse(args[3], out float y))
 						{
-							ev.Sender.RAMessage($"Invalid y size: {args[2]}", false);
+							ev.Sender.RAMessage($"Invalid y size: {args[3]}", false);
 							return;
 						}
 
 						if (!float.TryParse(args[4], out float z))
 						{
-							ev.Sender.RAMessage($"Invalid z size: {args[3]}", false);
+							ev.Sender.RAMessage($"Invalid z size: {args[4]}", false);
 							return;
 						}
-						
-						SpawnWorkbench(sender.gameObject.transform.position + sender.gameObject.GetComponent<Scp049PlayerScript>().plyCam.transform.forward * 2, sender.gameObject.transform.rotation.eulerAngles, new Vector3(x,y,z));
+
+						ReferenceHub player = Plugin.GetPlayer(args[1]);
+						if (player == null)
+						{
+							ev.Sender.RAMessage($"Player not found: {args[1]}", false);
+							return;
+						}
+
+						GameObject gameObject;
+						SpawnWorkbench(player.gameObject.transform.position + (gameObject = player.gameObject).GetComponent<Scp049PlayerScript>().plyCam.transform.forward * 2, gameObject.transform.rotation.eulerAngles, new Vector3(x,y,z));
 						ev.Sender.RAMessage($"Ahh, yes. Enslaved game code.");
 						return;
 					}
@@ -640,6 +650,18 @@ namespace AdminTools
 						Timing.RunCoroutine(SpawnBodies(player, role, count));
 						return;
 					}
+					case "config":
+					{
+						if (args[1].ToLower() == "reload")
+						{
+							ev.Allow = false;
+							ServerStatic.PermissionsHandler.RefreshPermissions();
+							ConfigFile.ReloadGameConfigs();
+							ev.Sender.RAMessage($"Config files reloaded.");
+						}
+
+						return;
+					}
 				}
 			}
 			catch (Exception e)
@@ -673,6 +695,7 @@ namespace AdminTools
 
 			NetworkServer.Spawn(bench);
 			bench.GetComponent<WorkStation>().Networkposition = offset;
+			bench.AddComponent<WorkStationUpgrader>();
 		}
 		
 		public void SpawnItem(ItemType type, Vector3 pos, Vector3 rot)
