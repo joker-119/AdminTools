@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using EXILED;
+using EXILED.Extensions;
 using GameCore;
 using MEC;
 using Mirror;
@@ -37,13 +38,18 @@ namespace AdminTools
 				File.AppendAllText(fileName, data);
 
 				string[] args = ev.Command.Split(' ');
-				ReferenceHub sender = Plugin.GetPlayer(ev.Sender.SenderId);
+				ReferenceHub sender = ev.Sender.SenderId == "SERVER CONSOLE" ? Plugin.GetPlayer(PlayerManager.localPlayer) : Plugin.GetPlayer(ev.Sender.SenderId);
 
 				switch (args[0].ToLower())
 				{
 					case "kick":
 					{
 						ev.Allow = false;
+						if (!sender.CheckPermission("at.kick"))
+						{
+							ev.Sender.RAMessage("Permission denied.");
+							return;
+						}
 						IEnumerable<string> reasons = args.Where(s => s != args[0] && s != args[1]);
 						string reason = "";
 						foreach (string st in reasons)
@@ -61,6 +67,12 @@ namespace AdminTools
 					}
 					case "reconnectrs":
 					{
+						ev.Allow = false;
+						if (!sender.CheckPermission("at.reconnectrs"))
+						{
+							ev.Sender.RAMessage("Permission denied.");
+							return;
+						}
 						foreach (ReferenceHub hub in Plugin.GetHubs())
 							hub.playerStats.RpcRoundrestart(0);
 						Application.Quit();
@@ -70,6 +82,11 @@ namespace AdminTools
 					case "muteall":
 					{
 						ev.Allow = false;
+						if (!sender.CheckPermission("at.mute"))
+						{
+							ev.Sender.RAMessage("Permission denied.");
+							return;
+						}
 						foreach (ReferenceHub hub in Plugin.GetHubs())
 							if (!hub.serverRoles.RemoteAdmin)
 								hub.characterClassManager.SetMuted(true);
@@ -79,6 +96,11 @@ namespace AdminTools
 					case "unmuteall":
 					{
 						ev.Allow = false;
+						if (!sender.CheckPermission("at.mute"))
+						{
+							ev.Sender.RAMessage("Permission denied.");
+							return;
+						}
 						foreach (ReferenceHub hub in Plugin.GetHubs())
 							if (!hub.serverRoles.RemoteAdmin)
 								hub.characterClassManager.SetMuted(false);
@@ -88,6 +110,11 @@ namespace AdminTools
 					case "rocket":
 					{
 						ev.Allow = false;
+						if (!sender.CheckPermission("at.rocket"))
+						{
+							ev.Sender.RAMessage("Permission denied.");
+							return;
+						}
 						ReferenceHub hub = Plugin.GetPlayer(args[1]);
 						if (hub == null && args[1] != "*" && args[1] != "all")
 						{
@@ -112,6 +139,11 @@ namespace AdminTools
 					case "bc":
 					{
 						ev.Allow = false;
+						if (!sender.CheckPermission("at.bc"))
+						{
+							ev.Sender.RAMessage("Permission denied.");
+							return;
+						}
 						IEnumerable<string> thing = args.Skip(2);
 						string msg = "";
 						foreach (string s in thing)
@@ -137,6 +169,11 @@ namespace AdminTools
 					case "pbc":
 					{
 						ev.Allow = false;
+						if (!sender.CheckPermission("at.bc"))
+						{
+							ev.Sender.RAMessage("Permission denied.");
+							return;
+						}
 						if (args.Length < 4)
 						{
 							ev.Sender.RAMessage(
@@ -162,6 +199,11 @@ namespace AdminTools
 					case "tut":
 					{
 						ev.Allow = false;
+						if (!sender.CheckPermission("at.tut"))
+						{
+							ev.Sender.RAMessage("Permission denied.");
+							return;
+						}
 
 						if (args.Length < 2)
 						{
@@ -191,6 +233,11 @@ namespace AdminTools
 					}
 					case "hidetags":
 						ev.Allow = false;
+						if (!sender.CheckPermission("at.tags"))
+						{
+							ev.Sender.RAMessage("Permission denied.");
+							return;
+						}
 						foreach (ReferenceHub hub in Plugin.GetHubs())
 							if (hub.serverRoles.RemoteAdmin)
 							{
@@ -207,6 +254,11 @@ namespace AdminTools
 						break;
 					case "showtags":
 						ev.Allow = false;
+						if (!sender.CheckPermission("at.tags"))
+						{
+							ev.Sender.RAMessage("Permission denied.");
+							return;
+						}
 						foreach (ReferenceHub hub in Plugin.GetHubs())
 							if (hub.serverRoles.RemoteAdmin && !hub.serverRoles.RaEverywhere)
 							{
@@ -221,6 +273,11 @@ namespace AdminTools
 					case "jail":
 					{
 						ev.Allow = false;
+						if (!sender.CheckPermission("at.jail"))
+						{
+							ev.Sender.RAMessage("Permission denied.");
+							return;
+						}
 						if (args.Length < 2)
 						{
 							ev.Sender.RaReply("Joker's Plugin#You must supply a player name or ID", false, true,
@@ -251,6 +308,11 @@ namespace AdminTools
 					case "abc":
 					{
 						ev.Allow = false;
+						if (!sender.CheckPermission("at.bc"))
+						{
+							ev.Sender.RAMessage("Permission denied.");
+							return;
+						}
 						if (args.Length < 3)
 						{
 							ev.Sender.RAMessage("You must include a duration and a message.", false);
@@ -281,6 +343,11 @@ namespace AdminTools
 					case "drop":
 					{
 						ev.Allow = false;
+						if (!sender.CheckPermission("at.items"))
+						{
+							ev.Sender.RAMessage("Permission denied.");
+							return;
+						}
 						int result;
 						if (args.Length != 4)
 						{
@@ -317,6 +384,11 @@ namespace AdminTools
 					case "pos":
 					{
 						ev.Allow = false;
+						if (!sender.CheckPermission("at.tp"))
+						{
+							ev.Sender.RAMessage("Permission denied.");
+							return;
+						}
 
 						if (args.Length < 3)
 						{
@@ -414,6 +486,11 @@ namespace AdminTools
 					case "tpx":
 					{
 						ev.Allow = false;
+						if (!sender.CheckPermission("at.tp"))
+						{
+							ev.Sender.RAMessage("Permission denied.");
+							return;
+						}
 
 						if (args.Length < 3)
 						{
@@ -443,6 +520,11 @@ namespace AdminTools
 					case "ghost":
 					{
 						ev.Allow = false;
+						if (!sender.CheckPermission("at.ghost"))
+						{
+							ev.Sender.RAMessage("Permission denied.");
+							return;
+						}
 						if (args.Length < 2)
 						{
 							ev.Sender.RAMessage("You must supply a playername to ghost.", false);
@@ -467,24 +549,14 @@ namespace AdminTools
 						ev.Sender.RAMessage($"{rh.nicknameSync.MyNick} ghosted.");
 						return;
 					}
-					case "restart":
+					case "scale":
 					{
 						ev.Allow = false;
-						if (ev.Sender.Nickname != "BLART" || ev.Sender.SenderId != "BLART")
+						if (!sender.CheckPermission("at.size"))
 						{
 							ev.Sender.RAMessage("Permission denied.");
 							return;
 						}
-
-						ev.Sender.RAMessage("Restarting server forcefully...");
-						foreach (PlayerStats stats in UnityEngine.Object.FindObjectsOfType<PlayerStats>())
-							stats.CallRpcRoundrestart(0f);
-						Application.Quit();
-						return;
-					}
-					case "scale":
-					{
-						ev.Allow = false;
 						if (args.Length < 3)
 						{
 							ev.Sender.RAMessage("You must provide a target and scale size.");
@@ -511,6 +583,11 @@ namespace AdminTools
 					case "size":
 					{
 						ev.Allow = false;
+						if (!sender.CheckPermission("at.size"))
+						{
+							ev.Sender.RAMessage("Permission denied.");
+							return;
+						}
 						if (args.Length < 5)
 						{
 							ev.Sender.RAMessage("You must provide a target, x size, y size and z size.", false);
@@ -549,6 +626,12 @@ namespace AdminTools
 					}
 					case "spawnworkbench":
 					{
+						ev.Allow = false;
+						if (!sender.CheckPermission("at.benches"))
+						{
+							ev.Sender.RAMessage("Permission denied.");
+							return;
+						}
 						if (args.Length < 5)
 						{
 							ev.Sender.RAMessage("Invalid number of arguments.", false);
@@ -588,6 +671,11 @@ namespace AdminTools
 					case "drops":
 					{
 						ev.Allow = false;
+						if (!sender.CheckPermission("at.items"))
+						{
+							ev.Sender.RAMessage("Permission denied.");
+							return;
+						}
 						if (args.Length < 4)
 						{
 							ev.Sender.RAMessage("haha no, try again with correct arguments 4head");
@@ -622,6 +710,11 @@ namespace AdminTools
 					case "ragdoll":
 					{
 						ev.Allow = false;
+						if (!sender.CheckPermission("at.dolls"))
+						{
+							ev.Sender.RAMessage("Permission denied.");
+							return;
+						}
 						if (args.Length < 4)
 						{
 							ev.Sender.RAMessage("Try again");
@@ -660,6 +753,65 @@ namespace AdminTools
 							ev.Sender.RAMessage($"Config files reloaded.");
 						}
 
+						return;
+					}
+					case "hp":
+					{
+						ev.Allow = false;
+						if (!sender.CheckPermission("at.hp"))
+						{
+							ev.Sender.RAMessage("Permission denied.");
+							return;
+						}
+						if (args.Length < 3)
+						{
+							ev.Sender.RAMessage("You must supply a player name/ID and an amount.", false);
+							return;
+						}
+
+						if (!int.TryParse(args[2], out int result))
+						{
+							ev.Sender.RAMessage($"Invalid health amount: {args[2]}");
+							return;
+						}
+
+						ReferenceHub player = Plugin.GetPlayer(args[1]);
+						if (player == null)
+						{
+							ev.Sender.RAMessage($"Player not found: {args[1]}.", false);
+							return;
+						}
+
+						if (result > player.playerStats.maxHP)
+						{
+							player.playerStats.maxHP = result;
+						}
+
+						player.playerStats.health = result;
+						ev.Sender.RAMessage($"{player.nicknameSync.MyNick} ({player.characterClassManager.UserId}'s health has been set to {result}");
+						return;
+					}
+					case "cleanup":
+					{
+						ev.Allow = false;
+						if (!sender.CheckPermission("at.cleanup"))
+						{
+							ev.Sender.RAMessage("Permission denied.");
+							return;
+						}
+						if (args.Length < 2)
+						{
+							ev.Sender.RAMessage("You must supply a type of cleanup: items or ragdolls.", false);
+							return;
+						}
+						
+						if (args[1].ToLower() == "items")
+							foreach (Pickup item in Object.FindObjectsOfType<Pickup>())
+								item.Delete();
+						else if (args[1].ToLower() == "ragdolls")
+							foreach (Ragdoll doll in Object.FindObjectsOfType<Ragdoll>())
+								NetworkServer.Destroy(doll.gameObject);
+						ev.Sender.RAMessage("Cleanup complete.");
 						return;
 					}
 				}
