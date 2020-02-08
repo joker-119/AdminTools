@@ -38,7 +38,7 @@ namespace AdminTools
 				File.AppendAllText(fileName, data);
 
 				string[] args = ev.Command.Split(' ');
-				ReferenceHub sender = ev.Sender.SenderId == "SERVER CONSOLE" ? Plugin.GetPlayer(PlayerManager.localPlayer) : Plugin.GetPlayer(ev.Sender.SenderId);
+				ReferenceHub sender = ev.Sender.SenderId == "SERVER CONSOLE" || ev.Sender.SenderId == "GAME CONSOLE" ? Plugin.GetPlayer(PlayerManager.localPlayer) : Plugin.GetPlayer(ev.Sender.SenderId);
 
 				switch (args[0].ToLower())
 				{
