@@ -7,8 +7,10 @@ using EXILED.Extensions;
 using GameCore;
 using MEC;
 using Mirror;
+using RemoteAdmin;
 using UnityEngine;
 using Utf8Json.Resolvers.Internal;
+using Log = EXILED.Log;
 using Object = UnityEngine.Object;
 
 namespace AdminTools
@@ -39,7 +41,7 @@ namespace AdminTools
 
 				string[] args = ev.Command.Split(' ');
 				ReferenceHub sender = ev.Sender.SenderId == "SERVER CONSOLE" || ev.Sender.SenderId == "GAME CONSOLE" ? Plugin.GetPlayer(PlayerManager.localPlayer) : Plugin.GetPlayer(ev.Sender.SenderId);
-
+				
 				switch (args[0].ToLower())
 				{
 					case "kick":
@@ -707,6 +709,65 @@ namespace AdminTools
 						ev.Sender.RAMessage($"Should be done ecksdee - {size} - {yesnt.model.transform.localScale}");
 						return;
 					}
+					case "dummy":
+					{
+						ev.Allow = false;
+						if (!sender.CheckPermission("at.dummy"))
+						{
+							ev.Sender.RAMessage("Permission denied.", false);
+							return;
+						}
+
+						if (args.Length < 6)
+						{
+							ev.Sender.RAMessage("You must supply a player, dummy role, x size, y size and z size");
+							return;
+						}
+
+						ReferenceHub player = Player.GetPlayer(args[1]);
+						if (player == null)
+						{
+							ev.Sender.RAMessage("Player not found.", false);
+							return;
+						}
+
+						RoleType role = RoleType.None;
+						try
+						{
+							role = (RoleType) Enum.Parse(typeof(RoleType), args[2]);
+						}
+						catch (Exception)
+						{
+							ev.Sender.RAMessage($"Invalid role selected: {args[2]}", false);
+							return;
+						}
+
+						if (role == RoleType.None)
+						{
+							ev.Sender.RAMessage("Cannot spawn a dummy without a role.", false);
+							return;
+						}
+
+						if (!float.TryParse(args[3], out float x))
+						{
+							ev.Sender.RAMessage("Invalid x value.");
+							return;
+						}
+						if (!float.TryParse(args[4], out float y))
+						{
+							ev.Sender.RAMessage("Invalid y value.");
+							return;
+						}
+						if (!float.TryParse(args[5], out float z))
+						{
+							ev.Sender.RAMessage("Invalid z value.");
+							return;
+						}
+
+						SpawnDummyModel(player.GetPosition(), player.gameObject.transform.localRotation, role, x, y, z);
+						ev.Sender.RAMessage("Dummy spawned.");
+						break;
+					}
 					case "ragdoll":
 					{
 						ev.Allow = false;
@@ -821,7 +882,26 @@ namespace AdminTools
 				Plugin.Error($"Handling command error: {e}");
 			}
 		}
-		
+
+		private void SpawnDummyModel(Vector3 position, Quaternion rotation, RoleType role, float x, float y, float z)
+		{
+			GameObject obj =
+				Object.Instantiate(
+					NetworkManager.singleton.spawnPrefabs.FirstOrDefault(p => p.gameObject.name == "Player"));
+			CharacterClassManager ccm = obj.GetComponent<CharacterClassManager>();
+			if (ccm == null)
+				Log.Error("CCM is null, doufus. You need to do this the harder way.");
+			ccm.CurClass = role;
+			ccm.RefreshPlyModel();
+			obj.GetComponent<NicknameSync>().Network_myNickSync = "Dummy";
+			obj.GetComponent<QueryProcessor>().PlayerId = 9999;
+			obj.GetComponent<QueryProcessor>().NetworkPlayerId = 9999;
+			obj.transform.localScale = new Vector3(x, y, z);
+			obj.transform.position = position;
+			obj.transform.rotation = rotation;
+			NetworkServer.Spawn(obj);
+		}
+
 		private IEnumerator<float> SpawnBodies(ReferenceHub player, int role, int count)
 		{
 			for (int i = 0; i < count; i++)
