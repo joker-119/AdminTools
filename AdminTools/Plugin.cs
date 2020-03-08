@@ -51,7 +51,7 @@ namespace AdminTools
 			}
 			catch (Exception e)
 			{
-				Error($"Loading error: {e}");
+				Log.Error($"Loading error: {e}");
 			}
 		}
 
