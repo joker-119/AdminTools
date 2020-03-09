@@ -1012,7 +1012,12 @@ namespace AdminTools
 						foreach (ReferenceHub hub in hubs)
 						{
 							GrenadeManager gm = hub.GetComponent<GrenadeManager>();
-							GrenadeSettings grenade = gm.availableGrenades[(int) ItemType.GrenadeFrag];
+							GrenadeSettings grenade = gm.availableGrenades.FirstOrDefault(g => g.inventoryID == ItemType.GrenadeFrag);
+							if (grenade == null)
+							{
+								ev.Sender.RAMessage($"Something broke that really really <b>really</b> shouldn't have.. Notify Joker with the following error code: GS-NRE", false);
+								return;
+							}
 							Grenade component = Object.Instantiate(grenade.grenadeInstance).GetComponent<Grenade>();
 							component.InitData(gm, Vector3.zero, Vector3.zero, 0f);
 							NetworkServer.Spawn(component.gameObject);
