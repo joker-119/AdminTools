@@ -1049,6 +1049,7 @@ namespace AdminTools
 									ev.Sender.RAMessage("Player not found.", false);
 									return;
 								}
+								hubs.Add(rh);
 							}
 
 							foreach (ReferenceHub hub in hubs)
