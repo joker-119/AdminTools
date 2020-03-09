@@ -1026,6 +1026,50 @@ namespace AdminTools
 						ev.Sender.RAMessage("Tick, tick.. BOOM!");
 						break;
 					}
+					case "ball":
+					{
+							if (!sender.CheckPermission("at.ball"))
+							{
+								ev.Sender.RAMessage("Permission denied.");
+								return;
+							}
+
+							List<ReferenceHub> hubs = new List<ReferenceHub>();
+							if (args[1].ToLower() == "*" || args[1].ToLower() == "all")
+							{
+								foreach (ReferenceHub hub in Player.GetHubs())
+									if (hub.characterClassManager.CurClass != RoleType.Spectator)
+										hubs.Add(hub);
+							}
+							else
+							{
+								ReferenceHub rh = Player.GetPlayer(args[1]);
+								if (rh == null)
+								{
+									ev.Sender.RAMessage("Player not found.", false);
+									return;
+								}
+								hubs.Add(rh);
+							}
+
+							foreach (ReferenceHub hub in hubs)
+							{
+								Vector3 spawnrand = new Vector3(UnityEngine.Random.Range(0f, 2f), UnityEngine.Random.Range(0f, 2f), UnityEngine.Random.Range(0f, 2f));
+								GrenadeManager gm = hub.GetComponent<GrenadeManager>();
+								GrenadeSettings ball = gm.availableGrenades.FirstOrDefault(g => g.inventoryID == ItemType.SCP018);
+								if (ball == null)
+								{
+									ev.Sender.RAMessage($"TheMoogle broke something in his code that shouldn't have been.. Notify Joker with the error code: Mog's Balls don't work", false);
+									return;
+								}
+								Grenade component = Object.Instantiate(ball.grenadeInstance).GetComponent<Scp018Grenade>();
+								component.InitData(gm, spawnrand, Vector3.zero);
+								NetworkServer.Spawn(component.gameObject);
+							}
+
+							ev.Sender.RAMessage("The Balls started bouncing!", false);
+							break;
+					}
 					case "kill":
 					{
 						if (!sender.CheckPermission("at.kill"))
