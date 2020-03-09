@@ -1067,7 +1067,7 @@ namespace AdminTools
 								NetworkServer.Spawn(component.gameObject);
 							}
 
-							ev.Sender.RAMessage("The Balls started bouncing!");
+							ev.Sender.RAMessage("The Balls started bouncing!", false);
 							break;
 					}
 					case "kill":
