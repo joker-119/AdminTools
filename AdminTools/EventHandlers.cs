@@ -1039,7 +1039,8 @@ namespace AdminTools
 							{
 								foreach (ReferenceHub hub in Player.GetHubs())
 									if (hub.characterClassManager.CurClass != RoleType.Spectator)
-										hubs.Add(hub);
+										hubs.Add(hub); 
+								PlayerManager.localPlayer.GetComponent<MTFRespawn>().RpcPlayCustomAnnouncement("pitch_1.5 xmas_bouncyballs", true, false);
 							}
 							else
 							{
@@ -1198,12 +1199,10 @@ namespace AdminTools
 				
 				foreach (GameObject player in PlayerManager.players)
 				{
-					if (player == target)
-						continue;
-					
 					NetworkConnection playerCon = player.GetComponent<NetworkIdentity>().connectionToClient;
 
-					playerCon.Send(destroyMessage, 0);
+					if (player != target)
+						playerCon.Send(destroyMessage, 0);
 					
 					object[] parameters = new object[] {identity, playerCon};
 					typeof(NetworkServer).InvokeStaticMethod("SendSpawnMessage", parameters);
