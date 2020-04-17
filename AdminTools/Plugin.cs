@@ -46,6 +46,8 @@ namespace AdminTools
 				Events.RoundEndEvent += EventHandlers.OnRoundEnd;
 				Events.TriggerTeslaEvent += EventHandlers.OnTriggerTesla;
 				Events.SetClassEvent += EventHandlers.OnSetClass;
+				Events.PlayerLeaveEvent += EventHandlers.OnPlayerLeave;
+				Events.RoundStartEvent += EventHandlers.OnRoundStart;
 				HarmonyInstance instance = HarmonyInstance.Create($"com.joker.admintools.{PatchCounter}");
 				instance.PatchAll();
 			}
@@ -68,6 +70,8 @@ namespace AdminTools
 			Events.RoundEndEvent -= EventHandlers.OnRoundEnd;
 			Events.TriggerTeslaEvent -= EventHandlers.OnTriggerTesla;
 			Events.SetClassEvent -= EventHandlers.OnSetClass;
+			Events.PlayerLeaveEvent -= EventHandlers.OnPlayerLeave;
+			Events.RoundStartEvent -= EventHandlers.OnRoundStart;
 			EventHandlers = null;
 		}
 
