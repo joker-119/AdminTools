@@ -776,7 +776,7 @@ namespace AdminTools
 							ev.Allow = false;
 							if (!sender.CheckPermission("at.dummy"))
 							{
-								ev.Sender.RAMessage("Permission denied.", false);
+								ev.Sender.RAMessage("Permission denied.");
 								return;
 							}
 
@@ -990,7 +990,7 @@ namespace AdminTools
 							ev.Allow = false;
 							if (!sender.CheckPermission("at.grenade"))
 							{
-								ev.Sender.RAMessage("Permission denied.", false);
+								ev.Sender.RAMessage("Permission denied.");
 								return;
 							}
 
@@ -1184,7 +1184,7 @@ namespace AdminTools
 
 									if (ply.inventory.items.Count != 0)
 									{
-										string itemLister = $"Player {ply.nicknameSync.MyNick} has the following items: ";
+										string itemLister = $"Player {ply.nicknameSync.MyNick} has the following items in their inventory (in order): ";
 										foreach (Inventory.SyncItemInfo item in ply.inventory.items)
 										{
 											itemLister += item.id + ", ";
@@ -1335,13 +1335,6 @@ namespace AdminTools
 									switch (args[1].ToLower())
 									{
 										case "doors":
-											ReferenceHub player = Player.GetPlayer(args[2]);
-											if (player == null)
-											{
-												ev.Sender.RAMessage($"Player {args[2]} not found");
-												return;
-											}
-
 											if (args[2].ToLower() == "*" || args[2].ToLower() == "all")
 											{
 												foreach (ReferenceHub hub in Player.GetHubs())
@@ -1351,8 +1344,21 @@ namespace AdminTools
 														hub.gameObject.AddComponent<BreakDoorComponent>();
 														bd_hubs.Add(hub);
 													}
+													else
+													{
+														hub.SetBypassMode(false);
+														bdComponent.BreakAll = false;
+													}
 												}
 												ev.Sender.RAMessage("Instant breaking of doors is on for all players now");
+												return;
+											}
+
+											ReferenceHub player = Player.GetPlayer(args[2]);
+											if (player == null)
+											{
+												ev.Sender.RAMessage($"Player {args[2]} not found");
+												return;
 											}
 
 											if (!player.TryGetComponent(out BreakDoorComponent doorBreak))
@@ -1367,7 +1373,9 @@ namespace AdminTools
 											{
 												if (doorBreak.BreakAll)
 												{
-													ev.Sender.RAMessage("Disable breaking everything first for this player");
+													ev.Sender.RAMessage($"Instant breaking of doors is on for {player.nicknameSync.MyNick}");
+													doorBreak.BreakAll = false;
+													player.SetBypassMode(false);
 													return;
 												}
 
@@ -1377,25 +1385,32 @@ namespace AdminTools
 											}
 											break;
 										case "all":
-											player = Player.GetPlayer(args[2]);
-											if (player == null)
-											{
-												ev.Sender.RAMessage($"Player {args[2]} not found");
-												return;
-											}
-
 											if (args[2].ToLower() == "*" || args[2].ToLower() == "all")
 											{
 												foreach (ReferenceHub hub in Player.GetHubs())
 												{
 													if (!hub.TryGetComponent(out BreakDoorComponent bdComponent))
 													{
-														hub.gameObject.AddComponent<BreakDoorComponent>();
+														BreakDoorComponent doorBreakerAll = hub.gameObject.AddComponent<BreakDoorComponent>();
 														bd_hubs.Add(hub);
+														hub.SetBypassMode(true);
+														doorBreakerAll.BreakAll = true;
+													}
+													else
+													{
+														bdComponent.BreakAll = true;
 														hub.SetBypassMode(true);
 													}
 												}
 												ev.Sender.RAMessage("Instant breaking of everything is on for all players now");
+												return;
+											}
+
+											player = Player.GetPlayer(args[2]);
+											if (player == null)
+											{
+												ev.Sender.RAMessage($"Player {args[2]} not found");
+												return;
 											}
 
 											if (!player.TryGetComponent(out BreakDoorComponent doorBreaker))
@@ -1410,7 +1425,9 @@ namespace AdminTools
 											{
 												if (!doorBreaker.BreakAll)
 												{
-													ev.Sender.RAMessage("Disable breaking just doors first for this player");
+													ev.Sender.RAMessage($"Instant breaking of everything is on for {player.nicknameSync.MyNick}");
+													doorBreaker.BreakAll = true;
+													player.SetBypassMode(true);
 													return;
 												}
 												ev.Sender.RAMessage($"Instant breaking of everything is off for {player.nicknameSync.MyNick}");
