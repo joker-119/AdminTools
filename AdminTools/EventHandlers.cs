@@ -994,6 +994,12 @@ namespace AdminTools
 								return;
 							}
 
+							if (args.Length < 3)
+							{
+								ev.Sender.RAMessage($"Too few arguments. Value: {args.Length}, Expected 3");
+								return;
+							}
+
 							List<ReferenceHub> hubs = new List<ReferenceHub>();
 							if (args[1].ToLower() == "*" || args[1].ToLower() == "all")
 							{
@@ -1012,21 +1018,44 @@ namespace AdminTools
 								hubs.Add(rh);
 							}
 
-							foreach (ReferenceHub hub in hubs)
+							switch (args[2].ToLower())
 							{
-								GrenadeManager gm = hub.GetComponent<GrenadeManager>();
-								GrenadeSettings grenade = gm.availableGrenades.FirstOrDefault(g => g.inventoryID == ItemType.GrenadeFrag);
-								if (grenade == null)
-								{
-									ev.Sender.RAMessage($"Something broke that really really <b>really</b> shouldn't have.. Notify Joker with the following error code: GS-NRE", false);
-									return;
-								}
-								Grenade component = Object.Instantiate(grenade.grenadeInstance).GetComponent<Grenade>();
-								component.InitData(gm, Vector3.zero, Vector3.zero, 0f);
-								NetworkServer.Spawn(component.gameObject);
+								case "frag":
+									foreach (ReferenceHub hub in hubs)
+									{
+										GrenadeManager gm = hub.GetComponent<GrenadeManager>();
+										GrenadeSettings grenade = gm.availableGrenades.FirstOrDefault(g => g.inventoryID == ItemType.GrenadeFrag);
+										if (grenade == null)
+										{
+											ev.Sender.RAMessage($"Something broke that really really <b>really</b> shouldn't have.. Notify Joker with the following error code: GS-NRE", false);
+											return;
+										}
+										Grenade component = Object.Instantiate(grenade.grenadeInstance).GetComponent<Grenade>();
+										component.InitData(gm, Vector3.zero, Vector3.zero, 0f);
+										NetworkServer.Spawn(component.gameObject);
+									}
+									ev.Sender.RAMessage("Tick, tick.. BOOM!");
+									break;
+								case "flash":
+									foreach (ReferenceHub hub in hubs)
+									{
+										GrenadeManager gm = hub.GetComponent<GrenadeManager>();
+										GrenadeSettings grenade = gm.availableGrenades.FirstOrDefault(g => g.inventoryID == ItemType.GrenadeFlash);
+										if (grenade == null)
+										{
+											ev.Sender.RAMessage($"Something broke that really really <b>really</b> shouldn't have.. Notify Joker with the following error code: GS-NRE", false);
+											return;
+										}
+										Grenade component = Object.Instantiate(grenade.grenadeInstance).GetComponent<Grenade>();
+										component.InitData(gm, Vector3.zero, Vector3.zero, 0f);
+										NetworkServer.Spawn(component.gameObject);
+									}
+									ev.Sender.RAMessage("Don't look at the light!");
+									break;
+								default:
+									ev.Sender.RAMessage("Enter either \"frag\" or \"flash\".");
+									break;
 							}
-
-							ev.Sender.RAMessage("Tick, tick.. BOOM!");
 							break;
 						}
 					case "ball":
