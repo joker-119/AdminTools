@@ -18,7 +18,7 @@ namespace AdminTools
 	public class EventHandlers
 	{
 		private readonly Plugin plugin;
-		List<ReferenceHub> ik_hubs = new List<ReferenceHub>(); 
+		List<ReferenceHub> ik_hubs = new List<ReferenceHub>();
 		List<ReferenceHub> bd_hubs = new List<ReferenceHub>();
 		public EventHandlers(Plugin plugin) => this.plugin = plugin;
 
@@ -1067,7 +1067,7 @@ namespace AdminTools
 										component.InitData(gm, spawnrand, Vector3.zero);
 										NetworkServer.Spawn(component.gameObject);
 									}
-									ev.Sender.RAMessage("The Balls started bouncing!", false);
+									ev.Sender.RAMessage("The Balls started bouncing!");
 									break;
 								default:
 									ev.Sender.RAMessage("Enter either \"frag\", \"flash\" or \"ball\".");
@@ -1081,6 +1081,12 @@ namespace AdminTools
 							if (!sender.CheckPermission("at.ball"))
 							{
 								ev.Sender.RAMessage("Permission denied.");
+								return;
+							}
+
+							if (args.Length < 2)
+							{
+								ev.Sender.RAMessage($"Too few arguments. Value: {args.Length}, Expected 2");
 								return;
 							}
 
@@ -1118,7 +1124,7 @@ namespace AdminTools
 								NetworkServer.Spawn(component.gameObject);
 							}
 
-							ev.Sender.RAMessage("The Balls started bouncing!", false);
+							ev.Sender.RAMessage("The Balls started bouncing!");
 							break;
 						}
 					case "kill":
@@ -1174,7 +1180,7 @@ namespace AdminTools
 								return;
 							}
 
-							switch (args[1].ToLower()) 
+							switch (args[1].ToLower())
 							{
 								case "clear":
 									if (args[2].ToLower() == "*" || args[2].ToLower() == "all")
@@ -1544,32 +1550,32 @@ namespace AdminTools
 			bench.GetComponent<WorkStation>().Networkposition = offset;
 			bench.AddComponent<WorkStationUpgrader>();
 		}
-		
+
 		public void SpawnItem(ItemType type, Vector3 pos, Vector3 rot)
 		{
 			PlayerManager.localPlayer.GetComponent<Inventory>().SetPickup(type, -4.656647E+11f, pos, Quaternion.Euler(rot), 0, 0, 0);
 		}
-		
+
 		private IEnumerator<float> DoTut(ReferenceHub rh)
 		{
 			if (rh.serverRoles.OverwatchEnabled)
-				rh.serverRoles.OverwatchEnabled = false;	
-			
-        	rh.characterClassManager.SetPlayersClass(RoleType.Tutorial, rh.gameObject, true);
-        	yield return Timing.WaitForSeconds(1f);
-        	var d = UnityEngine.Object.FindObjectsOfType<Door>();
-        	foreach (Door door in d)
-        		if (door.DoorName == "SURFACE_GATE")
-        			rh.plyMovementSync.OverridePosition(door.transform.position + Vector3.up * 2, 0f);
-        	rh.serverRoles.CallTargetSetNoclipReady(rh.characterClassManager.connectionToClient, true);
-        	rh.serverRoles.NoclipReady = true;
-        }
-		
-		
+				rh.serverRoles.OverwatchEnabled = false;
+
+			rh.characterClassManager.SetPlayersClass(RoleType.Tutorial, rh.gameObject, true);
+			yield return Timing.WaitForSeconds(1f);
+			var d = UnityEngine.Object.FindObjectsOfType<Door>();
+			foreach (Door door in d)
+				if (door.DoorName == "SURFACE_GATE")
+					rh.plyMovementSync.OverridePosition(door.transform.position + Vector3.up * 2, 0f);
+			rh.serverRoles.CallTargetSetNoclipReady(rh.characterClassManager.connectionToClient, true);
+			rh.serverRoles.NoclipReady = true;
+		}
+
+
 		public void SetPlayerScale(GameObject target, float x, float y, float z)
 		{
 			try
-			{ 
+			{
 				NetworkIdentity identity = target.GetComponent<NetworkIdentity>();
 
 
@@ -1577,16 +1583,16 @@ namespace AdminTools
 
 				ObjectDestroyMessage destroyMessage = new ObjectDestroyMessage();
 				destroyMessage.netId = identity.netId;
-				
-				
+
+
 				foreach (GameObject player in PlayerManager.players)
 				{
 					NetworkConnection playerCon = player.GetComponent<NetworkIdentity>().connectionToClient;
 
 					if (player != target)
 						playerCon.Send(destroyMessage, 0);
-					
-					object[] parameters = new object[] {identity, playerCon};
+
+					object[] parameters = new object[] { identity, playerCon };
 					typeof(NetworkServer).InvokeStaticMethod("SendSpawnMessage", parameters);
 				}
 			}
@@ -1595,11 +1601,11 @@ namespace AdminTools
 				Log.Info($"Set Scale error: {e}");
 			}
 		}
-		
+
 		public void SetPlayerScale(GameObject target, float scale)
 		{
 			try
-			{ 
+			{
 				NetworkIdentity identity = target.GetComponent<NetworkIdentity>();
 
 
@@ -1607,18 +1613,18 @@ namespace AdminTools
 
 				ObjectDestroyMessage destroyMessage = new ObjectDestroyMessage();
 				destroyMessage.netId = identity.netId;
-				
-				
+
+
 				foreach (GameObject player in PlayerManager.players)
 				{
 					if (player == target)
 						continue;
-					
+
 					NetworkConnection playerCon = player.GetComponent<NetworkIdentity>().connectionToClient;
 
 					playerCon.Send(destroyMessage, 0);
-					
-					object[] parameters = new object[] {identity, playerCon};
+
+					object[] parameters = new object[] { identity, playerCon };
 					typeof(NetworkServer).InvokeStaticMethod("SendSpawnMessage", parameters);
 				}
 			}
@@ -1627,7 +1633,7 @@ namespace AdminTools
 				Log.Info($"Set Scale error: {e}");
 			}
 		}
-		
+
 		public IEnumerator<float> DoRocket(ReferenceHub hub, float speed)
 		{
 			const int maxAmnt = 50;
@@ -1646,7 +1652,7 @@ namespace AdminTools
 				yield return Timing.WaitForOneFrame;
 			}
 		}
-		
+
 		public IEnumerator<float> DoJail(ReferenceHub rh, bool skipadd = false)
 		{
 			List<ItemType> items = new List<ItemType>();
@@ -1752,7 +1758,7 @@ namespace AdminTools
 
 		public void OnSetClass(SetClassEvent ev)
 		{
-			if (plugin.GodTuts) 
+			if (plugin.GodTuts)
 				ev.Player.characterClassManager.GodMode = ev.Role == RoleType.Tutorial;
 		}
 
@@ -1771,3 +1777,4 @@ namespace AdminTools
 		}
 	}
 }
+
