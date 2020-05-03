@@ -1052,8 +1052,25 @@ namespace AdminTools
 									}
 									ev.Sender.RAMessage("Don't look at the light!");
 									break;
+								case "ball":
+									foreach (ReferenceHub hub in hubs)
+									{
+										Vector3 spawnrand = new Vector3(UnityEngine.Random.Range(0f, 2f), UnityEngine.Random.Range(0f, 2f), UnityEngine.Random.Range(0f, 2f));
+										GrenadeManager gm = hub.GetComponent<GrenadeManager>();
+										GrenadeSettings ball = gm.availableGrenades.FirstOrDefault(g => g.inventoryID == ItemType.SCP018);
+										if (ball == null)
+										{
+											ev.Sender.RAMessage($"TheMoogle broke something in his code that shouldn't have been.. Notify Joker with the error code: Mog's Balls don't work", false);
+											return;
+										}
+										Grenade component = Object.Instantiate(ball.grenadeInstance).GetComponent<Scp018Grenade>();
+										component.InitData(gm, spawnrand, Vector3.zero);
+										NetworkServer.Spawn(component.gameObject);
+									}
+									ev.Sender.RAMessage("The Balls started bouncing!", false);
+									break;
 								default:
-									ev.Sender.RAMessage("Enter either \"frag\" or \"flash\".");
+									ev.Sender.RAMessage("Enter either \"frag\", \"flash\" or \"ball\".");
 									break;
 							}
 							break;
