@@ -1,4 +1,4 @@
-# AdminTools
+# AdminTools - Unofficial
 
 An unofficial fork of Joker's AdminTools, provides more functionality and more!
 
