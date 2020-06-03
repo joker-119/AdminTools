@@ -1474,6 +1474,10 @@ namespace AdminTools
 						}
 						break;
 					case "strip":
+						if (!CommandProcessor.CheckPermissions(ev.Sender, args[0].ToUpper(), PlayerPermissions.PlayersManagement, "AdminTools", false))
+						{
+							return;
+						}
 						ev.Allow = false;
 						if (args.Length < 2)
 						{
