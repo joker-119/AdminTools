@@ -141,8 +141,8 @@ namespace AdminTools
 							uint time = uint.Parse(args[1]);
 							foreach (GameObject p in PlayerManager.players)
 								p.GetComponent<Broadcast>()
-									.TargetAddElement(p.GetComponent<Scp049PlayerScript>().connectionToClient, msg, time,
-										false);
+									.TargetAddElement(p.GetComponent<Scp049_2PlayerScript>().connectionToClient, msg, (ushort)time,
+										Broadcast.BroadcastFlags.Normal);
 							ev.Sender.RAMessage("Broadcast Sent.");
 							break;
 						}
@@ -182,7 +182,7 @@ namespace AdminTools
 							string msg = "";
 							foreach (string s in thing)
 								msg += $"{s} ";
-							Player.GetPlayer(args[1])?.Broadcast(result, msg, false);
+							Player.GetPlayer(args[1])?.Broadcast((ushort)result, msg, false);
 							ev.Sender.RAMessage("Message sent.");
 							break;
 						}
@@ -235,7 +235,6 @@ namespace AdminTools
 								hub.serverRoles.NetworkGlobalBadge = null;
 								hub.serverRoles.SetText(null);
 								hub.serverRoles.SetColor(null);
-								hub.serverRoles.GlobalSet = false;
 								hub.serverRoles.RefreshHiddenTag();
 							}
 
@@ -323,7 +322,7 @@ namespace AdminTools
 							{
 								ReferenceHub rh = o.GetComponent<ReferenceHub>();
 								if (rh.serverRoles.RemoteAdmin)
-									rh.Broadcast(result, $"{ev.Sender.Nickname}: {msg}", false);
+									rh.Broadcast((ushort)result, $"{ev.Sender.Nickname}: {msg}", false);
 							}
 
 							ev.Sender.RAMessage("Message sent to all online staff members.");
@@ -434,7 +433,7 @@ namespace AdminTools
 												return;
 											}
 
-											rh.plyMovementSync.OverridePosition(new Vector3(x, y, z), 0f, false);
+											rh.playerMovementSync.OverridePosition(new Vector3(x, y, z), 0f, false);
 											ev.Sender.RAMessage(
 												$"Player {rh.nicknameSync.MyNick} - {rh.characterClassManager.UserId} moved to x{x} y{y} z{z}");
 											break;
@@ -461,19 +460,19 @@ namespace AdminTools
 												return;
 											}
 
-											Vector3 pos = rh.plyMovementSync.RealModelPosition;
+											Vector3 pos = rh.playerMovementSync.RealModelPosition;
 											switch (args[3].ToLower())
 											{
 												case "x":
-													rh.plyMovementSync.OverridePosition(
+													rh.playerMovementSync.OverridePosition(
 														new Vector3(pos.x + newPos, pos.y, pos.z), 0f);
 													break;
 												case "y":
-													rh.plyMovementSync.OverridePosition(
+													rh.playerMovementSync.OverridePosition(
 														new Vector3(pos.x, pos.y + newPos, pos.z), 0f);
 													break;
 												case "z":
-													rh.plyMovementSync.OverridePosition(
+													rh.playerMovementSync.OverridePosition(
 														new Vector3(pos.x, pos.y, pos.z + newPos), 0f);
 													break;
 											}
@@ -530,7 +529,7 @@ namespace AdminTools
 
 							foreach (ReferenceHub rh in hubs)
 							{
-								rh.plyMovementSync.OverridePosition(target.plyMovementSync.RealModelPosition, 0f, false);
+								rh.playerMovementSync.OverridePosition(target.playerMovementSync.RealModelPosition, 0f, false);
 								ev.Sender.RAMessage($"{rh.nicknameSync.MyNick} teleported to {target.nicknameSync.MyNick}");
 							}
 
@@ -712,7 +711,7 @@ namespace AdminTools
 							}
 
 							GameObject gameObject;
-							SpawnWorkbench(player.gameObject.transform.position + (gameObject = player.gameObject).GetComponent<Scp049PlayerScript>().plyCam.transform.forward * 2, gameObject.transform.rotation.eulerAngles, new Vector3(x, y, z));
+							SpawnWorkbench(player.gameObject.transform.position + (gameObject = player.gameObject).GetComponent<Scp049_2PlayerScript>().plyCam.transform.forward * 2, gameObject.transform.rotation.eulerAngles, new Vector3(x, y, z));
 							ev.Sender.RAMessage($"Ahh, yes. Enslaved game code.");
 							return;
 						}
@@ -955,7 +954,7 @@ namespace AdminTools
 									player.playerStats.maxHP = result;
 								}
 
-								player.playerStats.health = result;
+								player.playerStats.Health = result;
 								ev.Sender.RAMessage(
 									$"{player.nicknameSync.MyNick} ({player.characterClassManager.UserId}'s health has been set to {result}");
 							}
@@ -1182,28 +1181,6 @@ namespace AdminTools
 
 							switch (args[1].ToLower())
 							{
-								case "clear":
-									if (args[2].ToLower() == "*" || args[2].ToLower() == "all")
-									{
-										foreach (ReferenceHub hub in Player.GetHubs())
-											if (hub.characterClassManager.CurClass != RoleType.Spectator)
-												hub.ClearInventory();
-
-										ev.Sender.RAMessage("Cleared all items in everyone's inventory");
-									}
-									else
-									{
-										ReferenceHub player = Player.GetPlayer(args[2]);
-										if (player == null)
-										{
-											ev.Sender.RAMessage($"Player {args[2]} not found");
-											return;
-										}
-
-										player.ClearInventory();
-										ev.Sender.RAMessage($"Cleared all items in {player.nicknameSync.MyNick}'s inventory");
-									}
-									break;
 								case "drop":
 									if (args[2].ToLower() == "*" || args[2].ToLower() == "all")
 									{
@@ -1496,6 +1473,34 @@ namespace AdminTools
 							}
 						}
 						break;
+					case "strip":
+						ev.Allow = false;
+						if (args.Length < 2)
+						{
+							ev.Sender.RAMessage("Syntax: strip ((id/name)/*/all)");
+							return;
+						}
+						if (args[1].ToLower() == "*" || args[1].ToLower() == "all")
+						{
+							foreach (ReferenceHub hub in Player.GetHubs())
+								if (hub.characterClassManager.CurClass != RoleType.Spectator)
+									hub.ClearInventory();
+
+							ev.Sender.RAMessage("Cleared all items in everyone's inventory");
+						}
+						else
+						{
+							ReferenceHub player = Player.GetPlayer(args[1]);
+							if (player == null)
+							{
+								ev.Sender.RAMessage($"Player {args[1]} not found");
+								return;
+							}
+
+							player.ClearInventory();
+							ev.Sender.RAMessage($"Cleared all items in {player.nicknameSync.MyNick}'s inventory");
+						}
+						break;
 				}
 			}
 			catch (Exception e)
@@ -1528,7 +1533,7 @@ namespace AdminTools
 			for (int i = 0; i < count; i++)
 			{
 				player.gameObject.GetComponent<RagdollManager>().SpawnRagdoll(player.gameObject.transform.position + (Vector3.up * 5),
-					Quaternion.identity, role,
+					Quaternion.identity, Vector3.zero, role,
 					new PlayerStats.HitInfo(1000f, player.characterClassManager.UserId, DamageTypes.Falldown,
 						player.queryProcessor.PlayerId), false, "SCP-343", "SCP-343", 0);
 				yield return Timing.WaitForSeconds(0.15f);
@@ -1566,7 +1571,7 @@ namespace AdminTools
 			var d = UnityEngine.Object.FindObjectsOfType<Door>();
 			foreach (Door door in d)
 				if (door.DoorName == "SURFACE_GATE")
-					rh.plyMovementSync.OverridePosition(door.transform.position + Vector3.up * 2, 0f);
+					rh.playerMovementSync.OverridePosition(door.transform.position + Vector3.up * 2, 0f);
 			rh.serverRoles.CallTargetSetNoclipReady(rh.characterClassManager.connectionToClient, true);
 			rh.serverRoles.NoclipReady = true;
 		}
@@ -1640,7 +1645,7 @@ namespace AdminTools
 			int amnt = 0;
 			while (hub.characterClassManager.CurClass != RoleType.Spectator)
 			{
-				hub.plyMovementSync.OverridePosition(hub.gameObject.transform.position + Vector3.up * speed, 0f, false);
+				hub.playerMovementSync.OverridePosition(hub.gameObject.transform.position + Vector3.up * speed, 0f, false);
 				amnt++;
 				if (amnt >= maxAmnt)
 				{
@@ -1661,7 +1666,7 @@ namespace AdminTools
 			if (!skipadd)
 				plugin.JailedPlayers.Add(new Jailed
 				{
-					Health = rh.playerStats.health,
+					Health = rh.playerStats.Health,
 					Position = rh.gameObject.transform.position,
 					Items = items,
 					Name = rh.characterClassManager.name,
@@ -1683,8 +1688,8 @@ namespace AdminTools
 			foreach (ItemType item in jail.Items)
 				rh.inventory.AddNewItem(item);
 			yield return Timing.WaitForSeconds(1.5f);
-			rh.playerStats.health = jail.Health;
-			rh.plyMovementSync.OverridePosition(jail.Position, 0f);
+			rh.playerStats.Health = jail.Health;
+			rh.playerMovementSync.OverridePosition(jail.Position, 0f);
 			rh.gameObject.transform.position = jail.Position;
 			plugin.JailedPlayers.Remove(jail);
 		}
