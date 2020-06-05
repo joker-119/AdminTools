@@ -54,7 +54,7 @@ namespace AdminTools
 							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.kick"))
 							{
-								ev.Sender.RemoteAdminMessage("Permission denied.");
+								ev.ReplyMessage = ("Permission denied.");
 								return;
 							}
 							IEnumerable<string> reasons = args.Where(s => s != args[0] && s != args[1]);
@@ -64,12 +64,13 @@ namespace AdminTools
 							GameObject obj = Player.Get(args[1])?.GameObject;
 							if (obj == null)
 							{
-								ev.Sender.RemoteAdminMessage("Player not found", false);
+								ev.ReplyMessage = ("Player not found");
+								ev.Success = false;
 								return;
 							}
 
 							ServerConsole.Disconnect(obj, $"You have been kicked from the server: {reason}");
-							ev.Sender.RemoteAdminMessage("Player was kicked.");
+							ev.ReplyMessage = ("Player was kicked.");
 							return;
 						}
 					case "muteall":
@@ -77,13 +78,13 @@ namespace AdminTools
 							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.mute"))
 							{
-								ev.Sender.RemoteAdminMessage("Permission denied.");
+								ev.ReplyMessage = ("Permission denied.");
 								return;
 							}
 							foreach (Player player in Player.List)
 								if (!player.ReferenceHub.serverRoles.RemoteAdmin)
 									player.IsMuted = true;
-							ev.Sender.RemoteAdminMessage("All non-staff players have been muted.");
+							ev.ReplyMessage = ("All non-staff players have been muted.");
 							return;
 						}
 					case "unmuteall":
@@ -91,13 +92,13 @@ namespace AdminTools
 							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.mute"))
 							{
-								ev.Sender.RemoteAdminMessage("Permission denied.");
+								ev.ReplyMessage = ("Permission denied.");
 								return;
 							}
 							foreach (Player player in Player.List)
 								if (!player.ReferenceHub.serverRoles.RemoteAdmin)
 									player.IsMuted = false;
-							ev.Sender.RemoteAdminMessage("All non-staff players have been muted.");
+							ev.ReplyMessage = ("All non-staff players have been muted.");
 							return;
 						}
 					case "rocket":
@@ -105,19 +106,19 @@ namespace AdminTools
 							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.rocket"))
 							{
-								ev.Sender.RemoteAdminMessage("Permission denied.");
+								ev.ReplyMessage = ("Permission denied.");
 								return;
 							}
 							Player player = Player.Get(args[1]);
 							if (player == null && args[1] != "*" && args[1] != "all")
 							{
-								ev.Sender.RemoteAdminMessage("Player not found.");
+								ev.ReplyMessage = ("Player not found.");
 								return;
 							}
 
 							if (!float.TryParse(args[2], out float result))
 							{
-								ev.Sender.RemoteAdminMessage($"Speed argument invalid: {args[2]}");
+								ev.ReplyMessage = ($"Speed argument invalid: {args[2]}");
 								return;
 							}
 
@@ -126,7 +127,7 @@ namespace AdminTools
 									Timing.RunCoroutine(DoRocket(h, result));
 							else
 								Timing.RunCoroutine(DoRocket(player, result));
-							ev.Sender.RemoteAdminMessage("We're going on a trip, in our favorite rocketship.");
+							ev.ReplyMessage = ("We're going on a trip, in our favorite rocketship.");
 							return;
 						}
 					case "bc":
@@ -134,7 +135,7 @@ namespace AdminTools
 							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.bc"))
 							{
-								ev.Sender.RemoteAdminMessage("Permission denied.");
+								ev.ReplyMessage = ("Permission denied.");
 								return;
 							}
 							IEnumerable<string> thing = args.Skip(2);
@@ -146,7 +147,7 @@ namespace AdminTools
 								p.GetComponent<Broadcast>()
 									.TargetAddElement(p.GetComponent<Scp049_2PlayerScript>().connectionToClient, msg, (ushort)time,
 										Broadcast.BroadcastFlags.Normal);
-							ev.Sender.RemoteAdminMessage("Broadcast Sent.");
+							ev.ReplyMessage = ("Broadcast Sent.");
 							break;
 						}
 					case "id":
@@ -155,7 +156,7 @@ namespace AdminTools
 							Player player = Player.Get(args[1]);
 
 							string id = player == null ? "Player not found" : player.UserId;
-							ev.Sender.RemoteAdminMessage($"{player.Nickname} - {id}");
+							ev.ReplyMessage = ($"{player.Nickname} - {id}");
 							break;
 						}
 					case "pbc":
@@ -163,20 +164,20 @@ namespace AdminTools
 							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.bc"))
 							{
-								ev.Sender.RemoteAdminMessage("Permission denied.");
+								ev.ReplyMessage = ("Permission denied.");
 								return;
 							}
 							if (args.Length < 4)
 							{
-								ev.Sender.RemoteAdminMessage(
-									"You must provide a players name/id, a number in seconds to display the broadcast, and a message",
-									false);
+								ev.ReplyMessage = ("You must provide a players name/id, a number in seconds to display the broadcast, and a message");
+									ev.Success = false;
 								break;
 							}
 
 							if (!uint.TryParse(args[2], out uint result))
 							{
-								ev.Sender.RemoteAdminMessage("You must provide a valid integer for a duration.", false);
+								ev.ReplyMessage = ("You must provide a valid integer for a duration.");
+								ev.Success = false;
 								break;
 							}
 
@@ -185,7 +186,7 @@ namespace AdminTools
 							foreach (string s in thing)
 								msg += $"{s} ";
 							Player.Get(args[1])?.Broadcast((ushort)result, msg, Broadcast.BroadcastFlags.Normal);
-							ev.Sender.RemoteAdminMessage("Message sent.");
+							ev.ReplyMessage = ("Message sent.");
 							break;
 						}
 					case "tut":
@@ -193,31 +194,34 @@ namespace AdminTools
 							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.tut"))
 							{
-								ev.Sender.RemoteAdminMessage("Permission denied.");
+								ev.ReplyMessage = ("Permission denied.");
+								ev.Success = false;
 								return;
 							}
 
 							if (args.Length < 2)
 							{
-								ev.Sender.RemoteAdminMessage("You must supply a player name or ID", false);
+								ev.ReplyMessage = ("You must supply a player name or ID");
+								ev.Success = false;
 								return;
 							}
 
 							Player player = Player.Get(string.Join(" ", args.Skip(1)));
 							if (player == null)
 							{
-								ev.Sender.RemoteAdminMessage("Player not found.", false);
+								ev.ReplyMessage = ("Player not found.");
+								ev.Success = false;
 								return;
 							}
 
 							if (player.Role != RoleType.Tutorial)
 							{
 								Timing.RunCoroutine(DoTut(player));
-								ev.Sender.RemoteAdminMessage("Player set as tutorial.");
+								ev.ReplyMessage = ("Player set as tutorial.");
 							}
 							else
 							{
-								ev.Sender.RemoteAdminMessage("Player unset as Tutorial (killed).");
+								ev.ReplyMessage = ("Player unset as Tutorial (killed).");
 								player.Role = RoleType.Spectator;
 							}
 
@@ -227,32 +231,32 @@ namespace AdminTools
 						ev.IsAllowed = false;
 						if (!sender.CheckPermission("at.tags"))
 						{
-							ev.Sender.RemoteAdminMessage("Permission denied.");
+							ev.ReplyMessage = ("Permission denied.");
 							return;
 						}
 						foreach (Player player in Player.List)
 							if (player.ReferenceHub.serverRoles.RemoteAdmin)
 							{
-								player.HideTag();
+								player.BadgeHidden = true;
 							}
 
-						ev.Sender.RemoteAdminMessage("All staff tags hidden.");
+						ev.ReplyMessage = ("All staff tags hidden.");
 
 						break;
 					case "showtags":
 						ev.IsAllowed = false;
 						if (!sender.CheckPermission("at.tags"))
 						{
-							ev.Sender.RemoteAdminMessage("Permission denied.");
+							ev.ReplyMessage = ("Permission denied.");
 							return;
 						}
 						foreach (Player player in Player.List)
 							if (player.ReferenceHub.serverRoles.RemoteAdmin && !player.ReferenceHub.serverRoles.RaEverywhere)
 							{
-								player.ShowTag();
+								player.BadgeHidden = false;
 							}
 
-						ev.Sender.RemoteAdminMessage("All staff tags shown.");
+						ev.ReplyMessage = ("All staff tags shown.");
 
 						break;
 					case "jail":
@@ -260,12 +264,13 @@ namespace AdminTools
 							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.jail"))
 							{
-								ev.Sender.RemoteAdminMessage("Permission denied.");
+								ev.ReplyMessage = ("Permission denied.");
 								return;
 							}
 							if (args.Length < 2)
 							{
-								ev.Sender.RemoteAdminMessage("You must supply a player name or ID", false);
+								ev.ReplyMessage = ("You must supply a player name or ID");
+								ev.Success = false;
 								return;
 							}
 
@@ -275,16 +280,21 @@ namespace AdminTools
 								filter += s;
 							Player target = Player.Get(filter);
 							if (target == null)
-								ev.Sender.RemoteAdminMessage("User not found.", false);
+							{
+								ev.ReplyMessage = ("User not found.");
+								ev.Success = false;
+								return;
+							}
+
 							if (plugin.JailedPlayers.Any(j => j.Userid == target.UserId))
 							{
 								Timing.RunCoroutine(DoUnJail(target));
-								ev.Sender.RemoteAdminMessage("Joker's Plugin#User unjailed.", true);
+								ev.ReplyMessage = ("User unjailed.");
 							}
 							else
 							{
 								Timing.RunCoroutine(DoJail(target));
-								ev.Sender.RemoteAdminMessage("User jailed.", true);
+								ev.ReplyMessage = ("User jailed.");
 							}
 
 							break;
@@ -294,18 +304,20 @@ namespace AdminTools
 							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.bc"))
 							{
-								ev.Sender.RemoteAdminMessage("Permission denied.");
+								ev.ReplyMessage = ("Permission denied.");
 								return;
 							}
 							if (args.Length < 3)
 							{
-								ev.Sender.RemoteAdminMessage("You must include a duration and a message.", false);
+								ev.ReplyMessage = ("You must include a duration and a message.");
+								ev.Success = false;
 								return;
 							}
 
 							if (!uint.TryParse(args[1], out uint result))
 							{
-								ev.Sender.RemoteAdminMessage("You must provide a valid integer for a duration.", false);
+								ev.ReplyMessage = ("You must provide a valid integer for a duration.");
+								ev.Success = false;
 								break;
 							}
 
@@ -319,7 +331,7 @@ namespace AdminTools
 									player.Broadcast((ushort)result, $"{ev.Sender.Nickname}: {msg}", Broadcast.BroadcastFlags.AdminChat);
 							}
 
-							ev.Sender.RemoteAdminMessage("Message sent to all online staff members.");
+							ev.ReplyMessage = ("Message sent to all online staff members.");
 
 							break;
 						}
@@ -328,20 +340,20 @@ namespace AdminTools
 							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.items"))
 							{
-								ev.Sender.RemoteAdminMessage("Permission denied.");
+								ev.ReplyMessage = ("Permission denied.");
 								return;
 							}
 							int result;
 							if (args.Length != 4)
 							{
-								ev.Sender.RemoteAdminMessage($"Invalid arguments.{args.Length}");
+								ev.ReplyMessage = ($"Invalid arguments.{args.Length}");
 								break;
 							}
 
 							Player player = Player.Get(args[1]);
 							if (player == null)
 							{
-								ev.Sender.RemoteAdminMessage("Player not found.");
+								ev.ReplyMessage = ("Player not found.");
 								break;
 							}
 
@@ -349,19 +361,19 @@ namespace AdminTools
 
 							if (!int.TryParse(args[3], out result))
 							{
-								ev.Sender.RemoteAdminMessage("Not a number doufus.");
+								ev.ReplyMessage = ("Not a number doufus.");
 								break;
 							}
 
 							if (result > 200)
 							{
-								ev.Sender.RemoteAdminMessage("Try a lower number that won't crash my servers, ty.");
+								ev.ReplyMessage = ("Try a lower number that won't crash my servers, ty.");
 								return;
 							}
 
 							for (int i = 0; i < result; i++)
 								SpawnItem(item, player.Position, Vector3.zero);
-							ev.Sender.RemoteAdminMessage("Done. hehexd");
+							ev.ReplyMessage = ("Done. hehexd");
 							return;
 						}
 					case "pos":
@@ -369,13 +381,14 @@ namespace AdminTools
 							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.tp"))
 							{
-								ev.Sender.RemoteAdminMessage("Permission denied.");
+								ev.ReplyMessage = ("Permission denied.");
 								return;
 							}
 
 							if (args.Length < 3)
 							{
-								ev.Sender.RemoteAdminMessage("You must supply a player name/ID and a subcommand.", false);
+								ev.ReplyMessage = ("You must supply a player name/ID and a subcommand.");
+								ev.Success = false;
 								return;
 							}
 
@@ -391,7 +404,8 @@ namespace AdminTools
 								Player player = Player.Get(args[1]);
 								if (player == null)
 								{
-									ev.Sender.RemoteAdminMessage("Player not found.", false);
+									ev.ReplyMessage = ("Player not found.");
+									ev.Success = false;
 									return;
 								}
 								players.Add(player);
@@ -404,30 +418,31 @@ namespace AdminTools
 									{
 										if (args.Length < 6)
 										{
-											ev.Sender.RemoteAdminMessage("You must supply x, y and z coordinated.", false);
+											ev.ReplyMessage = ("You must supply x, y and z coordinated.");
+											ev.Success = false;
 											return;
 										}
 
 										if (!float.TryParse(args[3], out float x))
 										{
-											ev.Sender.RemoteAdminMessage("Invalid x coordinates.");
+											ev.ReplyMessage = ("Invalid x coordinates.");
 											return;
 										}
 
 										if (!float.TryParse(args[4], out float y))
 										{
-											ev.Sender.RemoteAdminMessage("Invalid y coordinates.");
+											ev.ReplyMessage = ("Invalid y coordinates.");
 											return;
 										}
 
 										if (!float.TryParse(args[5], out float z))
 										{
-											ev.Sender.RemoteAdminMessage("Invalid z coordinates.");
+											ev.ReplyMessage = ("Invalid z coordinates.");
 											return;
 										}
 
 										player.Position = new Vector3(x, y, z);
-										ev.Sender.RemoteAdminMessage(
+										ev.ReplyMessage = (
 											$"Player {player.Nickname} - {player.UserId} moved to x{x} y{y} z{z}");
 										break;
 									}
@@ -436,20 +451,20 @@ namespace AdminTools
 										Vector3 pos = player.Position;
 										string ret =
 											$"{player.Nickname} - {player.UserId} Position: x {pos.x} y {pos.y} z {pos.z}";
-										ev.Sender.RemoteAdminMessage(ret);
+										ev.ReplyMessage = (ret);
 										break;
 									}
 									case "add":
 									{
 										if (args[3] != "x" && args[3] != "y" && args[3] != "z")
 										{
-											ev.Sender.RemoteAdminMessage("Invalid coordinate plane selected.");
+											ev.ReplyMessage = ("Invalid coordinate plane selected.");
 											return;
 										}
 
 										if (!float.TryParse(args[4], out float newPos))
 										{
-											ev.Sender.RemoteAdminMessage("Invalid coordinate.");
+											ev.ReplyMessage = ("Invalid coordinate.");
 											return;
 										}
 
@@ -467,7 +482,7 @@ namespace AdminTools
 												break;
 										}
 
-										ev.Sender.RemoteAdminMessage(
+										ev.ReplyMessage = (
 											$"Player {player.Nickname} - {player.UserId} position changed.");
 										break;
 									}
@@ -480,13 +495,13 @@ namespace AdminTools
 							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.tp"))
 							{
-								ev.Sender.RemoteAdminMessage("Permission denied.");
+								ev.ReplyMessage = ("Permission denied.");
 								return;
 							}
 
 							if (args.Length < 3)
 							{
-								ev.Sender.RemoteAdminMessage(
+								ev.ReplyMessage = (
 									"You must supply a player name/ID to teleport and a player name/ID to teleport them to.");
 								return;
 							}
@@ -503,7 +518,8 @@ namespace AdminTools
 								Player player = Player.Get(args[1]);
 								if (player == null)
 								{
-									ev.Sender.RemoteAdminMessage("Player not found.", false);
+									ev.ReplyMessage = ("Player not found.");
+									ev.Success = false;
 									return;
 								}
 								players.Add(player);
@@ -512,14 +528,14 @@ namespace AdminTools
 
 							if (target == null)
 							{
-								ev.Sender.RemoteAdminMessage($"Player {args[2]} not found.");
+								ev.ReplyMessage = ($"Player {args[2]} not found.");
 								return;
 							}
 
 							foreach (Player player in players)
 							{
 								player.Position = target.Position;
-								ev.Sender.RemoteAdminMessage($"{player.Nickname} teleported to {target.Nickname}");
+								ev.ReplyMessage = ($"{player.Nickname} teleported to {target.Nickname}");
 							}
 
 							break;
@@ -529,31 +545,33 @@ namespace AdminTools
 							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.ghost"))
 							{
-								ev.Sender.RemoteAdminMessage("Permission denied.");
+								ev.ReplyMessage = ("Permission denied.");
 								return;
 							}
 							if (args.Length < 2)
 							{
-								ev.Sender.RemoteAdminMessage("You must supply a playername to ghost.", false);
+								ev.ReplyMessage = ("You must supply a playername to ghost.");
+								ev.Success = false;
 								return;
 							}
 
 							Player player = Player.Get(args[1]);
 							if (player == null)
 							{
-								ev.Sender.RemoteAdminMessage("Player not found.", false);
+								ev.ReplyMessage = ("Player not found.");
+								ev.Success = false;
 								return;
 							}
 
 							if (player.IsInvisible)
 							{
 								player.IsInvisible = false;
-								ev.Sender.RemoteAdminMessage($"{player.Nickname} removed from ghostmode.");
+								ev.ReplyMessage = ($"{player.Nickname} removed from ghostmode.");
 								return;
 							}
 
 							player.IsInvisible = true;
-							ev.Sender.RemoteAdminMessage($"{player.Nickname} ghosted.");
+							ev.ReplyMessage = ($"{player.Nickname} ghosted.");
 							return;
 						}
 					case "scale":
@@ -561,18 +579,18 @@ namespace AdminTools
 							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.size"))
 							{
-								ev.Sender.RemoteAdminMessage("Permission denied.");
+								ev.ReplyMessage = ("Permission denied.");
 								return;
 							}
 							if (args.Length < 3)
 							{
-								ev.Sender.RemoteAdminMessage("You must provide a target and scale size.");
+								ev.ReplyMessage = ("You must provide a target and scale size.");
 								return;
 							}
 
 							if (!float.TryParse(args[2], out float scale))
 							{
-								ev.Sender.RemoteAdminMessage("Invalid scale size selected.");
+								ev.ReplyMessage = ("Invalid scale size selected.");
 								return;
 							}
 
@@ -588,7 +606,8 @@ namespace AdminTools
 								Player player = Player.Get(args[1]);
 								if (player == null)
 								{
-									ev.Sender.RemoteAdminMessage("Player not found.", false);
+									ev.ReplyMessage = ("Player not found.");
+									ev.Success = false;
 									return;
 								}
 								players.Add(player);
@@ -597,7 +616,7 @@ namespace AdminTools
 							foreach (Player player in players)
 							{
 								SetPlayerScale(player.GameObject, scale);
-								ev.Sender.RemoteAdminMessage($"{player.Nickname} size set to {scale}");
+								ev.ReplyMessage = ($"{player.Nickname} size set to {scale}");
 							}
 
 							return;
@@ -607,30 +626,34 @@ namespace AdminTools
 							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.size"))
 							{
-								ev.Sender.RemoteAdminMessage("Permission denied.");
+								ev.ReplyMessage = ("Permission denied.");
 								return;
 							}
 							if (args.Length < 5)
 							{
-								ev.Sender.RemoteAdminMessage("You must provide a target, x size, y size and z size.", false);
+								ev.ReplyMessage = ("You must provide a target, x size, y size and z size.");
+								ev.Success = false;
 								return;
 							}
 
 							if (!float.TryParse(args[2], out float x))
 							{
-								ev.Sender.RemoteAdminMessage($"Invalid x size: {args[2]}", false);
+								ev.ReplyMessage = ($"Invalid x size: {args[2]}");
+								ev.Success = false;
 								return;
 							}
 
 							if (!float.TryParse(args[3], out float y))
 							{
-								ev.Sender.RemoteAdminMessage($"Invalid y size: {args[3]}", false);
+								ev.ReplyMessage = ($"Invalid y size: {args[3]}");
+								ev.Success = false;
 								return;
 							}
 
 							if (!float.TryParse(args[4], out float z))
 							{
-								ev.Sender.RemoteAdminMessage($"Invalid z size: {args[4]}", false);
+								ev.ReplyMessage = ($"Invalid z size: {args[4]}");
+								ev.Success = false;
 								return;
 							}
 
@@ -646,7 +669,8 @@ namespace AdminTools
 								Player player = Player.Get(args[1]);
 								if (player == null)
 								{
-									ev.Sender.RemoteAdminMessage("Player not found.", false);
+									ev.ReplyMessage = ("Player not found.");
+									ev.Success = false;
 									return;
 								}
 								players.Add(player);
@@ -655,7 +679,7 @@ namespace AdminTools
 							foreach (Player player in players)
 							{
 								SetPlayerScale(player.GameObject, x, y, z);
-								ev.Sender.RemoteAdminMessage($"{player.Nickname}'s size has been changed.");
+								ev.ReplyMessage = ($"{player.Nickname}'s size has been changed.");
 							}
 
 							return;
@@ -665,43 +689,47 @@ namespace AdminTools
 							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.benches"))
 							{
-								ev.Sender.RemoteAdminMessage("Permission denied.");
+								ev.ReplyMessage = ("Permission denied.");
 								return;
 							}
 							if (args.Length < 5)
 							{
-								ev.Sender.RemoteAdminMessage("Invalid number of arguments.", false);
+								ev.ReplyMessage = ("Invalid number of arguments.");
+								ev.Success = false;
 								return;
 							}
 
 							if (!float.TryParse(args[2], out float x))
 							{
-								ev.Sender.RemoteAdminMessage($"Invalid x size: {args[2]}", false);
+								ev.ReplyMessage = ($"Invalid x size: {args[2]}");
+								ev.Success = false;
 								return;
 							}
 
 							if (!float.TryParse(args[3], out float y))
 							{
-								ev.Sender.RemoteAdminMessage($"Invalid y size: {args[3]}", false);
+								ev.ReplyMessage = ($"Invalid y size: {args[3]}");
+								ev.Success = false;
 								return;
 							}
 
 							if (!float.TryParse(args[4], out float z))
 							{
-								ev.Sender.RemoteAdminMessage($"Invalid z size: {args[4]}", false);
+								ev.ReplyMessage = ($"Invalid z size: {args[4]}");
+								ev.Success = false;
 								return;
 							}
 
 							Player player = Player.Get(args[1]);
 							if (player == null)
 							{
-								ev.Sender.RemoteAdminMessage($"Player not found: {args[1]}", false);
+								ev.ReplyMessage = ($"Player not found: {args[1]}");
+								ev.Success = false;
 								return;
 							}
-
-							GameObject gameObject;
+							
 							SpawnWorkbench(player.Position + player.ReferenceHub.PlayerCameraReference.forward * 2, player.GameObject.transform.rotation.eulerAngles, new Vector3(x, y, z));
-							ev.Sender.RemoteAdminMessage($"Ahh, yes. Enslaved game code.");
+							ev.ReplyMessage = ($"Ahh, yes. Enslaved game code.");
 							return;
 						}
 					case "drops":
@@ -709,18 +737,18 @@ namespace AdminTools
 							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.items"))
 							{
-								ev.Sender.RemoteAdminMessage("Permission denied.");
+								ev.ReplyMessage = ("Permission denied.");
 								return;
 							}
 							if (args.Length < 4)
 							{
-								ev.Sender.RemoteAdminMessage("haha no, try again with correct arguments 4head");
+								ev.ReplyMessage = ("haha no, try again with correct arguments 4head");
 								return;
 							}
 
 							if (!float.TryParse(args[3], out float size))
 							{
-								ev.Sender.RemoteAdminMessage("Invalid size");
+								ev.ReplyMessage = ("Invalid size");
 								return;
 							}
 
@@ -736,7 +764,8 @@ namespace AdminTools
 								Player player = Player.Get(args[1]);
 								if (player == null)
 								{
-									ev.Sender.RemoteAdminMessage("Player not found.", false);
+									ev.ReplyMessage = ("Player not found.");
+									ev.Success = false;
 									return;
 								}
 								players.Add(player);
@@ -755,7 +784,7 @@ namespace AdminTools
 								NetworkServer.Spawn(yesnt.gameObject);
 							}
 
-							ev.Sender.RemoteAdminMessage(
+							ev.ReplyMessage = (
 									$"Yay, items! With sizes!!");
 							return;
 						}
@@ -764,13 +793,13 @@ namespace AdminTools
 							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.dummy"))
 							{
-								ev.Sender.RemoteAdminMessage("Permission denied.");
+								ev.ReplyMessage = ("Permission denied.");
 								return;
 							}
 
 							if (args.Length < 6)
 							{
-								ev.Sender.RemoteAdminMessage("You must supply a player, dummy role, x size, y size and z size");
+								ev.ReplyMessage = ("You must supply a player, dummy role, x size, y size and z size");
 								return;
 							}
 
@@ -786,7 +815,8 @@ namespace AdminTools
 								Player player = Player.Get(args[1]);
 								if (player == null)
 								{
-									ev.Sender.RemoteAdminMessage("Player not found.", false);
+									ev.ReplyMessage = ("Player not found.");
+									ev.Success = false;
 									return;
 								}
 								players.Add(player);
@@ -799,29 +829,31 @@ namespace AdminTools
 							}
 							catch (Exception)
 							{
-								ev.Sender.RemoteAdminMessage($"Invalid role selected: {args[2]}", false);
+								ev.ReplyMessage = ($"Invalid role selected: {args[2]}");
+								ev.Success = false;
 								return;
 							}
 
 							if (role == RoleType.None)
 							{
-								ev.Sender.RemoteAdminMessage("Cannot spawn a dummy without a role.", false);
+								ev.ReplyMessage = ("Cannot spawn a dummy without a role.");
+								ev.Success = false;
 								return;
 							}
 
 							if (!float.TryParse(args[3], out float x))
 							{
-								ev.Sender.RemoteAdminMessage("Invalid x value.");
+								ev.ReplyMessage = ("Invalid x value.");
 								return;
 							}
 							if (!float.TryParse(args[4], out float y))
 							{
-								ev.Sender.RemoteAdminMessage("Invalid y value.");
+								ev.ReplyMessage = ("Invalid y value.");
 								return;
 							}
 							if (!float.TryParse(args[5], out float z))
 							{
-								ev.Sender.RemoteAdminMessage("Invalid z value.");
+								ev.ReplyMessage = ("Invalid z value.");
 								return;
 							}
 
@@ -829,7 +861,7 @@ namespace AdminTools
 								SpawnDummyModel(player.Position, player.GameObject.transform.localRotation, role, x, y,
 									z);
 
-							ev.Sender.RemoteAdminMessage("Dummy(s) spawned.");
+							ev.ReplyMessage = ("Dummy(s) spawned.");
 							break;
 						}
 					case "ragdoll":
@@ -837,24 +869,24 @@ namespace AdminTools
 							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.dolls"))
 							{
-								ev.Sender.RemoteAdminMessage("Permission denied.");
+								ev.ReplyMessage = ("Permission denied.");
 								return;
 							}
 							if (args.Length < 4)
 							{
-								ev.Sender.RemoteAdminMessage("Try again");
+								ev.ReplyMessage = ("Try again");
 								return;
 							}
 
 							if (!int.TryParse(args[3], out int count))
 							{
-								ev.Sender.RemoteAdminMessage("Invalid number selected.");
+								ev.ReplyMessage = ("Invalid number selected.");
 								return;
 							}
 
 							if (!int.TryParse(args[2], out int role))
 							{
-								ev.Sender.RemoteAdminMessage("Invalid roleID");
+								ev.ReplyMessage = ("Invalid roleID");
 								return;
 							}
 
@@ -870,13 +902,14 @@ namespace AdminTools
 								Player player = Player.Get(args[1]);
 								if (player == null)
 								{
-									ev.Sender.RemoteAdminMessage("Player not found.", false);
+									ev.ReplyMessage = ("Player not found.");
+									ev.Success = false;
 									return;
 								}
 								players.Add(player);
 							}
 
-							ev.Sender.RemoteAdminMessage("hehexd");
+							ev.ReplyMessage = ("hehexd");
 							foreach (Player player in players) Timing.RunCoroutine(SpawnBodies(player, role, count));
 
 							return;
@@ -888,7 +921,7 @@ namespace AdminTools
 								ev.IsAllowed = false;
 								ServerStatic.PermissionsHandler.RefreshPermissions();
 								ConfigFile.ReloadGameConfigs();
-								ev.Sender.RemoteAdminMessage($"Config files reloaded.");
+								ev.ReplyMessage = ($"Config files reloaded.");
 							}
 
 							return;
@@ -898,18 +931,19 @@ namespace AdminTools
 							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.hp"))
 							{
-								ev.Sender.RemoteAdminMessage("Permission denied.");
+								ev.ReplyMessage = ("Permission denied.");
 								return;
 							}
 							if (args.Length < 3)
 							{
-								ev.Sender.RemoteAdminMessage("You must supply a player name/ID and an amount.", false);
+								ev.ReplyMessage = ("You must supply a player name/ID and an amount.");
+								ev.Success = false;
 								return;
 							}
 
 							if (!int.TryParse(args[2], out int result))
 							{
-								ev.Sender.RemoteAdminMessage($"Invalid health amount: {args[2]}");
+								ev.ReplyMessage = ($"Invalid health amount: {args[2]}");
 								return;
 							}
 
@@ -925,7 +959,8 @@ namespace AdminTools
 								Player player = Player.Get(args[1]);
 								if (player == null)
 								{
-									ev.Sender.RemoteAdminMessage("Player not found.", false);
+									ev.ReplyMessage = ("Player not found.");
+									ev.Success = false;
 									return;
 								}
 								players.Add(player);
@@ -937,7 +972,7 @@ namespace AdminTools
 									player.MaxHealth = result;
 
 								player.Health = result;
-								ev.Sender.RemoteAdminMessage(
+								ev.ReplyMessage = (
 									$"{player.Nickname} ({player.UserId}'s health has been set to {result}");
 							}
 
@@ -948,12 +983,13 @@ namespace AdminTools
 							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.cleanup"))
 							{
-								ev.Sender.RemoteAdminMessage("Permission denied.");
+								ev.ReplyMessage = ("Permission denied.");
 								return;
 							}
 							if (args.Length < 2)
 							{
-								ev.Sender.RemoteAdminMessage("You must supply a type of cleanup: items or ragdolls.", false);
+								ev.ReplyMessage = ("You must supply a type of cleanup: items or ragdolls.");
+								ev.Success = false;
 								return;
 							}
 
@@ -963,7 +999,7 @@ namespace AdminTools
 							else if (args[1].ToLower() == "ragdolls")
 								foreach (Ragdoll doll in Object.FindObjectsOfType<Ragdoll>())
 									NetworkServer.Destroy(doll.gameObject);
-							ev.Sender.RemoteAdminMessage("Cleanup complete.");
+							ev.ReplyMessage = ("Cleanup complete.");
 							return;
 						}
 					case "grenade":
@@ -971,13 +1007,13 @@ namespace AdminTools
 							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.grenade"))
 							{
-								ev.Sender.RemoteAdminMessage("Permission denied.");
+								ev.ReplyMessage = ("Permission denied.");
 								return;
 							}
 
 							if (args.Length < 3)
 							{
-								ev.Sender.RemoteAdminMessage($"Too few arguments. Value: {args.Length}, Expected 3");
+								ev.ReplyMessage = ($"Too few arguments. Value: {args.Length}, Expected 3");
 								return;
 							}
 
@@ -993,7 +1029,8 @@ namespace AdminTools
 								Player player = Player.Get(args[1]);
 								if (player == null)
 								{
-									ev.Sender.RemoteAdminMessage("Player not found.", false);
+									ev.ReplyMessage = ("Player not found.");
+									ev.Success = false;
 									return;
 								}
 								players.Add(player);
@@ -1008,14 +1045,15 @@ namespace AdminTools
 										GrenadeSettings grenade = gm.availableGrenades.FirstOrDefault(g => g.inventoryID == ItemType.GrenadeFrag);
 										if (grenade == null)
 										{
-											ev.Sender.RemoteAdminMessage($"Something broke that really really <b>really</b> shouldn't have.. Notify Joker with the following error code: GS-NRE", false);
+											ev.ReplyMessage = ($"Something broke that really really <b>really</b> shouldn't have.. Notify Joker with the following error code: GS-NRE");
+											ev.Success = false;
 											return;
 										}
 										Grenade component = Object.Instantiate(grenade.grenadeInstance).GetComponent<Grenade>();
 										component.InitData(gm, Vector3.zero, Vector3.zero, 0f);
 										NetworkServer.Spawn(component.gameObject);
 									}
-									ev.Sender.RemoteAdminMessage("Tick, tick.. BOOM!");
+									ev.ReplyMessage = ("Tick, tick.. BOOM!");
 									break;
 								case "flash":
 									foreach (Player player in players)
@@ -1024,14 +1062,15 @@ namespace AdminTools
 										GrenadeSettings grenade = gm.availableGrenades.FirstOrDefault(g => g.inventoryID == ItemType.GrenadeFlash);
 										if (grenade == null)
 										{
-											ev.Sender.RemoteAdminMessage($"Something broke that really really <b>really</b> shouldn't have.. Notify Joker with the following error code: GS-NRE", false);
+											ev.ReplyMessage = ($"Something broke that really really <b>really</b> shouldn't have.. Notify Joker with the following error code: GS-NRE");
+											ev.Success = false;
 											return;
 										}
 										Grenade component = Object.Instantiate(grenade.grenadeInstance).GetComponent<Grenade>();
 										component.InitData(gm, Vector3.zero, Vector3.zero, 0f);
 										NetworkServer.Spawn(component.gameObject);
 									}
-									ev.Sender.RemoteAdminMessage("Don't look at the light!");
+									ev.ReplyMessage = ("Don't look at the light!");
 									break;
 								case "ball":
 									foreach (Player player in players)
@@ -1041,17 +1080,18 @@ namespace AdminTools
 										GrenadeSettings ball = gm.availableGrenades.FirstOrDefault(g => g.inventoryID == ItemType.SCP018);
 										if (ball == null)
 										{
-											ev.Sender.RemoteAdminMessage($"TheMoogle broke something in his code that shouldn't have been.. Notify Joker with the error code: Mog's Balls don't work", false);
+											ev.ReplyMessage = ($"TheMoogle broke something in his code that shouldn't have been.. Notify Joker with the error code: Mog's Balls don't work");
+											ev.Success = false;
 											return;
 										}
 										Grenade component = Object.Instantiate(ball.grenadeInstance).GetComponent<Scp018Grenade>();
 										component.InitData(gm, spawnrand, Vector3.zero);
 										NetworkServer.Spawn(component.gameObject);
 									}
-									ev.Sender.RemoteAdminMessage("The Balls started bouncing!");
+									ev.ReplyMessage = ("The Balls started bouncing!");
 									break;
 								default:
-									ev.Sender.RemoteAdminMessage("Enter either \"frag\", \"flash\" or \"ball\".");
+									ev.ReplyMessage = ("Enter either \"frag\", \"flash\" or \"ball\".");
 									break;
 							}
 							break;
@@ -1061,13 +1101,13 @@ namespace AdminTools
 							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.ball"))
 							{
-								ev.Sender.RemoteAdminMessage("Permission denied.");
+								ev.ReplyMessage = ("Permission denied.");
 								return;
 							}
 
 							if (args.Length < 2)
 							{
-								ev.Sender.RemoteAdminMessage($"Too few arguments. Value: {args.Length}, Expected 2");
+								ev.ReplyMessage = ($"Too few arguments. Value: {args.Length}, Expected 2");
 								return;
 							}
 
@@ -1084,7 +1124,8 @@ namespace AdminTools
 								Player player = Player.Get(args[1]);
 								if (player == null)
 								{
-									ev.Sender.RemoteAdminMessage("Player not found.", false);
+									ev.ReplyMessage = ("Player not found.");
+									ev.Success = false;
 									return;
 								}
 								players.Add(player);
@@ -1097,7 +1138,8 @@ namespace AdminTools
 								GrenadeSettings ball = gm.availableGrenades.FirstOrDefault(g => g.inventoryID == ItemType.SCP018);
 								if (ball == null)
 								{
-									ev.Sender.RemoteAdminMessage($"TheMoogle broke something in his code that shouldn't have been.. Notify Joker with the error code: Mog's Balls don't work", false);
+									ev.ReplyMessage = ($"TheMoogle broke something in his code that shouldn't have been.. Notify Joker with the error code: Mog's Balls don't work");
+									ev.Success = false;
 									return;
 								}
 								Grenade component = Object.Instantiate(ball.grenadeInstance).GetComponent<Scp018Grenade>();
@@ -1105,7 +1147,7 @@ namespace AdminTools
 								NetworkServer.Spawn(component.gameObject);
 							}
 
-							ev.Sender.RemoteAdminMessage("The Balls started bouncing!");
+							ev.ReplyMessage = ("The Balls started bouncing!");
 							break;
 						}
 					case "kill":
@@ -1113,7 +1155,7 @@ namespace AdminTools
 							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.kill"))
 							{
-								ev.Sender.RemoteAdminMessage("Permission denied.");
+								ev.ReplyMessage = ("Permission denied.");
 								return;
 							}
 
@@ -1129,7 +1171,8 @@ namespace AdminTools
 								Player player = Player.Get(args[1]);
 								if (player == null)
 								{
-									ev.Sender.RemoteAdminMessage("Player not found.", false);
+									ev.ReplyMessage = ("Player not found.");
+									ev.Success = false;
 									return;
 								}
 								players.Add(player);
@@ -1141,7 +1184,7 @@ namespace AdminTools
 
 								player.ReferenceHub.playerStats.HurtPlayer(new PlayerStats.HitInfo(119000000, ev.Sender.Nickname, DamageTypes.Wall, id), player.GameObject);
 
-								ev.Sender.RemoteAdminMessage($"{player.Nickname} has been slayed.");
+								ev.ReplyMessage = ($"{player.Nickname} has been slayed.");
 							}
 
 							break;
@@ -1151,13 +1194,13 @@ namespace AdminTools
 							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.inv"))
 							{
-								ev.Sender.RemoteAdminMessage("Permission denied.");
+								ev.ReplyMessage = ("Permission denied.");
 								return;
 							}
 
 							if (args.Length < 3)
 							{
-								ev.Sender.RemoteAdminMessage("Please provide a removal command and id");
+								ev.ReplyMessage = ("Please provide a removal command and id");
 								return;
 							}
 
@@ -1170,26 +1213,26 @@ namespace AdminTools
 											if (player.Role != RoleType.Spectator)
 												player.Inventory.ServerDropAll();
 
-										ev.Sender.RemoteAdminMessage("Dropped all items in everyone's inventory");
+										ev.ReplyMessage = ("Dropped all items in everyone's inventory");
 									}
 									else
 									{
 										Player player = Player.Get(args[2]);
 										if (player == null)
 										{
-											ev.Sender.RemoteAdminMessage($"Player {args[2]} not found");
+											ev.ReplyMessage = ($"Player {args[2]} not found");
 											return;
 										}
 
 										player.Inventory.ServerDropAll();
-										ev.Sender.RemoteAdminMessage($"Dropped all items in {player.Nickname}'s inventory");
+										ev.ReplyMessage = ($"Dropped all items in {player.Nickname}'s inventory");
 									}
 									break;
 								case "see":
 									Player ply = Player.Get(args[2]);
 									if (ply == null)
 									{
-										ev.Sender.RemoteAdminMessage($"Player {args[2]} not found");
+										ev.ReplyMessage = ($"Player {args[2]} not found");
 										return;
 									}
 
@@ -1198,13 +1241,13 @@ namespace AdminTools
 										string itemLister = $"Player {ply.Nickname} has the following items in their inventory (in order): ";
 										foreach (Inventory.SyncItemInfo item in ply.Inventory.items) itemLister += item.id + ", ";
 										itemLister = itemLister.Substring(0, itemLister.Count() - 2);
-										ev.Sender.RemoteAdminMessage(itemLister);
+										ev.ReplyMessage = (itemLister);
 										return;
 									}
-									ev.Sender.RemoteAdminMessage($"Player {ply.Nickname} does not have any items in their inventory");
+									ev.ReplyMessage = ($"Player {ply.Nickname} does not have any items in their inventory");
 									break;
 								default:
-									ev.Sender.RemoteAdminMessage("Please enter either \"clear\", \"drop\", or \"see\"");
+									ev.ReplyMessage = ("Please enter either \"clear\", \"drop\", or \"see\"");
 									break;
 							}
 							break;
@@ -1214,13 +1257,13 @@ namespace AdminTools
 							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.ik"))
 							{
-								ev.Sender.RemoteAdminMessage("Permission denied.");
+								ev.ReplyMessage = ("Permission denied.");
 								return;
 							}
 
 							if (args.Length < 2)
 							{
-								ev.Sender.RemoteAdminMessage("Please provide a id");
+								ev.ReplyMessage = ("Please provide a id");
 								return;
 							}
 
@@ -1232,7 +1275,7 @@ namespace AdminTools
 										player.ReferenceHub.gameObject.AddComponent<InstantKillComponent>();
 									}
 
-								ev.Sender.RemoteAdminMessage("Instant killing is on for all players now");
+								ev.ReplyMessage = ("Instant killing is on for all players now");
 							}
 							else if (args[1].ToLower() == "list")
 							{
@@ -1242,36 +1285,36 @@ namespace AdminTools
 									foreach (Player player in Plugin.IkHubs.Keys) 
 										playerLister += player.Nickname + ", ";
 									playerLister = playerLister.Substring(0, playerLister.Count() - 2);
-									ev.Sender.RemoteAdminMessage(playerLister);
+									ev.ReplyMessage = (playerLister);
 									return;
 								}
-								ev.Sender.RemoteAdminMessage("No players currently online have instant killing on");
+								ev.ReplyMessage = ("No players currently online have instant killing on");
 							}
 							else if (args[1].ToLower() == "clear")
 							{
 								foreach (Player player in Plugin.IkHubs.Keys)
 									Object.Destroy(player.ReferenceHub.GetComponent<InstantKillComponent>());
 
-								ev.Sender.RemoteAdminMessage("Instant killing is off for all players now");
+								ev.ReplyMessage = ("Instant killing is off for all players now");
 							}
 							else
 							{
 								Player ply = Player.Get(args[1]);
 								if (ply == null)
 								{
-									ev.Sender.RemoteAdminMessage($"Player {args[1]} not found");
+									ev.ReplyMessage = ($"Player {args[1]} not found");
 									return;
 								}
 
 								if (!ply.ReferenceHub.TryGetComponent(out InstantKillComponent ikComponent))
 								{
 									ply.GameObject.AddComponent<InstantKillComponent>();
-									ev.Sender.RemoteAdminMessage($"Instant killing is on for {ply.Nickname}");
+									ev.ReplyMessage = ($"Instant killing is on for {ply.Nickname}");
 								}
 								else
 								{
 									UnityEngine.Object.Destroy(ikComponent);
-									ev.Sender.RemoteAdminMessage($"Instant killing is off for {ply.Nickname}");
+									ev.ReplyMessage = ($"Instant killing is off for {ply.Nickname}");
 								}
 							}
 							break;
@@ -1281,13 +1324,13 @@ namespace AdminTools
 							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.bd"))
 							{
-								ev.Sender.RemoteAdminMessage("Permission denied.");
+								ev.ReplyMessage = ("Permission denied.");
 								return;
 							}
 
 							if (args.Length < 2)
 							{
-								ev.Sender.RemoteAdminMessage("Please provide a break command and an id (if needed) (Note: For \"list\" and \"clear\" you do not need an id)");
+								ev.ReplyMessage = ("Please provide a break command and an id (if needed) (Note: For \"list\" and \"clear\" you do not need an id)");
 								return;
 							}
 
@@ -1303,19 +1346,19 @@ namespace AdminTools
 												foreach (Player player in Plugin.BdHubs.Keys)
 													playerLister += player.Nickname + ", ";
 												playerLister = playerLister.Substring(0, playerLister.Count() - 2);
-												ev.Sender.RemoteAdminMessage(playerLister);
+												ev.ReplyMessage = (playerLister);
 												return;
 											}
-											ev.Sender.RemoteAdminMessage("No players currently online have break door permissions on");
+											ev.ReplyMessage = ("No players currently online have break door permissions on");
 											break;
 										case "clear":
 											foreach (Player player in Plugin.BdHubs.Keys)
 												Object.Destroy(player.ReferenceHub.GetComponent<BreakDoorComponent>());
 
-											ev.Sender.RemoteAdminMessage("Break door permissions is off for all players now");
+											ev.ReplyMessage = ("Break door permissions is off for all players now");
 											break;
 										default:
-											ev.Sender.RemoteAdminMessage("Please enter either \"all\", \"clear\", \"doors\", or \"list\"");
+											ev.ReplyMessage = ("Please enter either \"all\", \"clear\", \"doors\", or \"list\"");
 											break;
 									}
 									break;
@@ -1335,20 +1378,20 @@ namespace AdminTools
 														bdComponent.breakAll = false;
 													}
 
-												ev.Sender.RemoteAdminMessage("Instant breaking of doors is on for all players now");
+												ev.ReplyMessage = ("Instant breaking of doors is on for all players now");
 												return;
 											}
 
 											Player ply = Player.Get(args[2]);
 											if (ply == null)
 											{
-												ev.Sender.RemoteAdminMessage($"Player {args[2]} not found");
+												ev.ReplyMessage = ($"Player {args[2]} not found");
 												return;
 											}
 
 											if (!ply.ReferenceHub.TryGetComponent(out BreakDoorComponent doorBreak))
 											{
-												ev.Sender.RemoteAdminMessage($"Instant breaking of doors is on for {ply.Nickname}");
+												ev.ReplyMessage = ($"Instant breaking of doors is on for {ply.Nickname}");
 												doorBreak = ply.GameObject.AddComponent<BreakDoorComponent>();
 												doorBreak.breakAll = false;
 											}
@@ -1356,12 +1399,12 @@ namespace AdminTools
 											{
 												if (doorBreak.breakAll)
 												{
-													ev.Sender.RemoteAdminMessage($"Instant breaking of doors is on for {ply.Nickname}");
+													ev.ReplyMessage = ($"Instant breaking of doors is on for {ply.Nickname}");
 													doorBreak.breakAll = false;
 													return;
 												}
 
-												ev.Sender.RemoteAdminMessage($"Instant breaking of doors is off for {ply.Nickname}");
+												ev.ReplyMessage = ($"Instant breaking of doors is off for {ply.Nickname}");
 												UnityEngine.Object.Destroy(doorBreak);
 											}
 											break;
@@ -1379,20 +1422,20 @@ namespace AdminTools
 														bdComponent.breakAll = true;
 													}
 
-												ev.Sender.RemoteAdminMessage("Instant breaking of everything is on for all players now");
+												ev.ReplyMessage = ("Instant breaking of everything is on for all players now");
 												return;
 											}
 
 											ply = Player.Get(args[2]);
 											if (ply == null)
 											{
-												ev.Sender.RemoteAdminMessage($"Player {args[2]} not found");
+												ev.ReplyMessage = ($"Player {args[2]} not found");
 												return;
 											}
 
 											if (!ply.ReferenceHub.TryGetComponent(out BreakDoorComponent doorBreaker))
 											{
-												ev.Sender.RemoteAdminMessage($"Instant breaking of everything is on for {ply.Nickname}");
+												ev.ReplyMessage = ($"Instant breaking of everything is on for {ply.Nickname}");
 												doorBreak = ply.GameObject.AddComponent<BreakDoorComponent>();
 												doorBreak.breakAll = true;
 											}
@@ -1400,16 +1443,16 @@ namespace AdminTools
 											{
 												if (!doorBreaker.breakAll)
 												{
-													ev.Sender.RemoteAdminMessage($"Instant breaking of everything is on for {ply.Nickname}");
+													ev.ReplyMessage = ($"Instant breaking of everything is on for {ply.Nickname}");
 													doorBreaker.breakAll = true;
 													return;
 												}
-												ev.Sender.RemoteAdminMessage($"Instant breaking of everything is off for {ply.Nickname}");
+												ev.ReplyMessage = ($"Instant breaking of everything is off for {ply.Nickname}");
 												UnityEngine.Object.Destroy(doorBreaker);
 											}
 											break;
 										default:
-											ev.Sender.RemoteAdminMessage("Please enter either \"all\", \"clear\", \"doors\", or \"list\"");
+											ev.ReplyMessage = ("Please enter either \"all\", \"clear\", \"doors\", or \"list\"");
 											break;
 									}
 									break;
@@ -1421,7 +1464,7 @@ namespace AdminTools
 						ev.IsAllowed = false;
 						if (args.Length < 2)
 						{
-							ev.Sender.RemoteAdminMessage("Syntax: strip ((id/name)/*/all)");
+							ev.ReplyMessage = ("Syntax: strip ((id/name)/*/all)");
 							return;
 						}
 						if (args[1].ToLower() == "*" || args[1].ToLower() == "all")
@@ -1430,19 +1473,19 @@ namespace AdminTools
 								if (player.Role != RoleType.Spectator)
 									player.ClearInventory();
 
-							ev.Sender.RemoteAdminMessage("Cleared all items in everyone's inventory");
+							ev.ReplyMessage = ("Cleared all items in everyone's inventory");
 						}
 						else
 						{
 							Player player = Player.Get(args[1]);
 							if (player == null)
 							{
-								ev.Sender.RemoteAdminMessage($"Player {args[1]} not found");
+								ev.ReplyMessage = ($"Player {args[1]} not found");
 								return;
 							}
 
 							player.ClearInventory();
-							ev.Sender.RemoteAdminMessage($"Cleared all items in {player.Nickname}'s inventory");
+							ev.ReplyMessage = ($"Cleared all items in {player.Nickname}'s inventory");
 						}
 						break;
 				}
@@ -1657,7 +1700,7 @@ namespace AdminTools
 				if (File.ReadAllText(plugin.HiddenTagsFilePath).Contains(ev.Player.UserId))
 				{
 					Log.Debug($"Hiding {ev.Player.UserId}'s tag.");
-					ev.Player.HideTag();
+					ev.Player.BadgeHidden = true;
 				}
 			}
 			catch (Exception e)
