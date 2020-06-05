@@ -18,8 +18,6 @@ namespace AdminTools
 	public class EventHandlers
 	{
 		private readonly Plugin plugin;
-		List<ReferenceHub> ik_hubs = new List<ReferenceHub>();
-		List<ReferenceHub> bd_hubs = new List<ReferenceHub>();
 		public EventHandlers(Plugin plugin) => this.plugin = plugin;
 
 		public void OnCommand(ref RACommandEvent ev)
@@ -149,10 +147,9 @@ namespace AdminTools
 					case "id":
 						{
 							ev.Allow = false;
-							string id;
 							ReferenceHub rh = Player.GetPlayer(args[1]);
 
-							id = rh == null ? "Player not found" : rh.characterClassManager.UserId;
+							string id = rh == null ? "Player not found" : rh.characterClassManager.UserId;
 							ev.Sender.RAMessage($"{rh.nicknameSync.MyNick} - {id}");
 							break;
 						}
@@ -274,7 +271,7 @@ namespace AdminTools
 								return;
 							}
 
-							var array = args.Where(a => a != args[0]);
+							IEnumerable<string> array = args.Where(a => a != args[0]);
 							string filter = null;
 							foreach (string s in array)
 								filter += s;
@@ -404,85 +401,83 @@ namespace AdminTools
 							}
 
 							foreach (ReferenceHub rh in hubs)
-							{
 								switch (args[2].ToLower())
 								{
 									case "set":
+									{
+										if (args.Length < 6)
 										{
-											if (args.Length < 6)
-											{
-												ev.Sender.RAMessage("You must supply x, y and z coordinated.", false);
-												return;
-											}
-
-											if (!float.TryParse(args[3], out float x))
-											{
-												ev.Sender.RAMessage("Invalid x coordinates.");
-												return;
-											}
-
-											if (!float.TryParse(args[4], out float y))
-											{
-												ev.Sender.RAMessage("Invalid y coordinates.");
-												return;
-											}
-
-											if (!float.TryParse(args[5], out float z))
-											{
-												ev.Sender.RAMessage("Invalid z coordinates.");
-												return;
-											}
-
-											rh.playerMovementSync.OverridePosition(new Vector3(x, y, z), 0f, false);
-											ev.Sender.RAMessage(
-												$"Player {rh.nicknameSync.MyNick} - {rh.characterClassManager.UserId} moved to x{x} y{y} z{z}");
-											break;
+											ev.Sender.RAMessage("You must supply x, y and z coordinated.", false);
+											return;
 										}
+
+										if (!float.TryParse(args[3], out float x))
+										{
+											ev.Sender.RAMessage("Invalid x coordinates.");
+											return;
+										}
+
+										if (!float.TryParse(args[4], out float y))
+										{
+											ev.Sender.RAMessage("Invalid y coordinates.");
+											return;
+										}
+
+										if (!float.TryParse(args[5], out float z))
+										{
+											ev.Sender.RAMessage("Invalid z coordinates.");
+											return;
+										}
+
+										rh.playerMovementSync.OverridePosition(new Vector3(x, y, z), 0f, false);
+										ev.Sender.RAMessage(
+											$"Player {rh.nicknameSync.MyNick} - {rh.characterClassManager.UserId} moved to x{x} y{y} z{z}");
+										break;
+									}
 									case "get":
-										{
-											Vector3 pos = rh.gameObject.transform.position;
-											string ret =
-												$"{rh.nicknameSync.MyNick} - {rh.characterClassManager.UserId} Position: x {pos.x} y {pos.y} z {pos.z}";
-											ev.Sender.RAMessage(ret);
-											break;
-										}
+									{
+										Vector3 pos = rh.gameObject.transform.position;
+										string ret =
+											$"{rh.nicknameSync.MyNick} - {rh.characterClassManager.UserId} Position: x {pos.x} y {pos.y} z {pos.z}";
+										ev.Sender.RAMessage(ret);
+										break;
+									}
 									case "add":
+									{
+										if (args[3] != "x" && args[3] != "y" && args[3] != "z")
 										{
-											if (args[3] != "x" && args[3] != "y" && args[3] != "z")
-											{
-												ev.Sender.RAMessage("Invalid coordinate plane selected.");
-												return;
-											}
-
-											if (!float.TryParse(args[4], out float newPos))
-											{
-												ev.Sender.RAMessage("Invalid coordinate.");
-												return;
-											}
-
-											Vector3 pos = rh.playerMovementSync.RealModelPosition;
-											switch (args[3].ToLower())
-											{
-												case "x":
-													rh.playerMovementSync.OverridePosition(
-														new Vector3(pos.x + newPos, pos.y, pos.z), 0f);
-													break;
-												case "y":
-													rh.playerMovementSync.OverridePosition(
-														new Vector3(pos.x, pos.y + newPos, pos.z), 0f);
-													break;
-												case "z":
-													rh.playerMovementSync.OverridePosition(
-														new Vector3(pos.x, pos.y, pos.z + newPos), 0f);
-													break;
-											}
-
-											ev.Sender.RAMessage(
-												$"Player {rh.nicknameSync.MyNick} - {rh.characterClassManager.UserId} position changed.");
-											break;
+											ev.Sender.RAMessage("Invalid coordinate plane selected.");
+											return;
 										}
+
+										if (!float.TryParse(args[4], out float newPos))
+										{
+											ev.Sender.RAMessage("Invalid coordinate.");
+											return;
+										}
+
+										Vector3 pos = rh.playerMovementSync.RealModelPosition;
+										switch (args[3].ToLower())
+										{
+											case "x":
+												rh.playerMovementSync.OverridePosition(
+													new Vector3(pos.x + newPos, pos.y, pos.z), 0f);
+												break;
+											case "y":
+												rh.playerMovementSync.OverridePosition(
+													new Vector3(pos.x, pos.y + newPos, pos.z), 0f);
+												break;
+											case "z":
+												rh.playerMovementSync.OverridePosition(
+													new Vector3(pos.x, pos.y, pos.z + newPos), 0f);
+												break;
+										}
+
+										ev.Sender.RAMessage(
+											$"Player {rh.nicknameSync.MyNick} - {rh.characterClassManager.UserId} position changed.");
+										break;
+									}
 								}
-							}
 
 							break;
 						}
@@ -837,10 +832,8 @@ namespace AdminTools
 							}
 
 							foreach (ReferenceHub player in hubs)
-							{
 								SpawnDummyModel(player.GetPosition(), player.gameObject.transform.localRotation, role, x, y,
 									z);
-							}
 
 							ev.Sender.RAMessage("Dummy(s) spawned.");
 							break;
@@ -890,10 +883,7 @@ namespace AdminTools
 							}
 
 							ev.Sender.RAMessage("hehexd");
-							foreach (ReferenceHub player in hubs)
-							{
-								Timing.RunCoroutine(SpawnBodies(player, role, count));
-							}
+							foreach (ReferenceHub player in hubs) Timing.RunCoroutine(SpawnBodies(player, role, count));
 
 							return;
 						}
@@ -949,10 +939,7 @@ namespace AdminTools
 
 							foreach (ReferenceHub player in hubs)
 							{
-								if (result > player.playerStats.maxHP)
-								{
-									player.playerStats.maxHP = result;
-								}
+								if (result > player.playerStats.maxHP) player.playerStats.maxHP = result;
 
 								player.playerStats.Health = result;
 								ev.Sender.RAMessage(
@@ -1214,10 +1201,7 @@ namespace AdminTools
 									if (ply.inventory.items.Count != 0)
 									{
 										string itemLister = $"Player {ply.nicknameSync.MyNick} has the following items in their inventory (in order): ";
-										foreach (Inventory.SyncItemInfo item in ply.inventory.items)
-										{
-											itemLister += item.id + ", ";
-										}
+										foreach (Inventory.SyncItemInfo item in ply.inventory.items) itemLister += item.id + ", ";
 										itemLister = itemLister.Substring(0, itemLister.Count() - 2);
 										ev.Sender.RAMessage(itemLister);
 										return;
@@ -1248,25 +1232,20 @@ namespace AdminTools
 							if (args[1].ToLower() == "*" || args[1].ToLower() == "all")
 							{
 								foreach (ReferenceHub hub in Player.GetHubs())
-								{
 									if (!hub.TryGetComponent(out InstantKillComponent ikComponent))
 									{
 										hub.gameObject.AddComponent<InstantKillComponent>();
-										ik_hubs.Add(hub);
 									}
-								}
 
 								ev.Sender.RAMessage("Instant killing is on for all players now");
 							}
 							else if (args[1].ToLower() == "list")
 							{
-								if (ik_hubs.Count != 0)
+								if (Plugin.IkHubs.Count != 0)
 								{
 									string playerLister = "Players with instant kill on: ";
-									foreach (ReferenceHub hub in ik_hubs)
-									{
+									foreach (ReferenceHub hub in Plugin.IkHubs.Keys) 
 										playerLister += hub.nicknameSync.MyNick + ", ";
-									}
 									playerLister = playerLister.Substring(0, playerLister.Count() - 2);
 									ev.Sender.RAMessage(playerLister);
 									return;
@@ -1275,14 +1254,9 @@ namespace AdminTools
 							}
 							else if (args[1].ToLower() == "clear")
 							{
-								foreach (ReferenceHub hub in Player.GetHubs())
-								{
-									if (hub.TryGetComponent(out InstantKillComponent ikComponent))
-									{
-										UnityEngine.Object.Destroy(ikComponent);
-										ik_hubs.Remove(hub);
-									}
-								}
+								foreach (ReferenceHub hub in Plugin.IkHubs.Keys)
+									Object.Destroy(hub.GetComponent<InstantKillComponent>());
+
 								ev.Sender.RAMessage("Instant killing is off for all players now");
 							}
 							else
@@ -1298,13 +1272,11 @@ namespace AdminTools
 								{
 									ply.gameObject.AddComponent<InstantKillComponent>();
 									ev.Sender.RAMessage($"Instant killing is on for {ply.nicknameSync.MyNick}");
-									ik_hubs.Add(ply);
 								}
 								else
 								{
 									UnityEngine.Object.Destroy(ikComponent);
 									ev.Sender.RAMessage($"Instant killing is off for {ply.nicknameSync.MyNick}");
-									ik_hubs.Remove(ply);
 								}
 							}
 							break;
@@ -1330,13 +1302,11 @@ namespace AdminTools
 									switch (args[1].ToLower())
 									{
 										case "list":
-											if (bd_hubs.Count != 0)
+											if (Plugin.BdHubs.Count != 0)
 											{
 												string playerLister = "Players with break doors permissions on: ";
-												foreach (ReferenceHub hub in bd_hubs)
-												{
+												foreach (ReferenceHub hub in Plugin.BdHubs.Keys)
 													playerLister += hub.nicknameSync.MyNick + ", ";
-												}
 												playerLister = playerLister.Substring(0, playerLister.Count() - 2);
 												ev.Sender.RAMessage(playerLister);
 												return;
@@ -1344,15 +1314,9 @@ namespace AdminTools
 											ev.Sender.RAMessage("No players currently online have break door permissions on");
 											break;
 										case "clear":
-											foreach (ReferenceHub hub in Player.GetHubs())
-											{
-												if (hub.TryGetComponent(out BreakDoorComponent bdComponent))
-												{
-													UnityEngine.Object.Destroy(bdComponent);
-													bd_hubs.Remove(hub);
-													hub.SetBypassMode(false);
-												}
-											}
+											foreach (ReferenceHub hub in Plugin.BdHubs.Keys)
+												Object.Destroy(hub.GetComponent<BreakDoorComponent>());
+
 											ev.Sender.RAMessage("Break door permissions is off for all players now");
 											break;
 										default:
@@ -1367,18 +1331,16 @@ namespace AdminTools
 											if (args[2].ToLower() == "*" || args[2].ToLower() == "all")
 											{
 												foreach (ReferenceHub hub in Player.GetHubs())
-												{
 													if (!hub.TryGetComponent(out BreakDoorComponent bdComponent))
 													{
 														hub.gameObject.AddComponent<BreakDoorComponent>();
-														bd_hubs.Add(hub);
 													}
 													else
 													{
 														hub.SetBypassMode(false);
-														bdComponent.BreakAll = false;
+														bdComponent.breakAll = false;
 													}
-												}
+
 												ev.Sender.RAMessage("Instant breaking of doors is on for all players now");
 												return;
 											}
@@ -1393,44 +1355,38 @@ namespace AdminTools
 											if (!player.TryGetComponent(out BreakDoorComponent doorBreak))
 											{
 												ev.Sender.RAMessage($"Instant breaking of doors is on for {player.nicknameSync.MyNick}");
-												BreakDoorComponent doorBreakerDoor = player.gameObject.AddComponent<BreakDoorComponent>();
-												doorBreakerDoor.BreakAll = false;
+												doorBreak = player.gameObject.AddComponent<BreakDoorComponent>();
+												doorBreak.breakAll = false;
 												player.SetBypassMode(false);
-												bd_hubs.Add(player);
 											}
 											else
 											{
-												if (doorBreak.BreakAll)
+												if (doorBreak.breakAll)
 												{
 													ev.Sender.RAMessage($"Instant breaking of doors is on for {player.nicknameSync.MyNick}");
-													doorBreak.BreakAll = false;
+													doorBreak.breakAll = false;
 													player.SetBypassMode(false);
 													return;
 												}
 
 												ev.Sender.RAMessage($"Instant breaking of doors is off for {player.nicknameSync.MyNick}");
 												UnityEngine.Object.Destroy(doorBreak);
-												bd_hubs.Remove(player);
 											}
 											break;
 										case "all":
 											if (args[2].ToLower() == "*" || args[2].ToLower() == "all")
 											{
 												foreach (ReferenceHub hub in Player.GetHubs())
-												{
 													if (!hub.TryGetComponent(out BreakDoorComponent bdComponent))
 													{
 														BreakDoorComponent doorBreakerAll = hub.gameObject.AddComponent<BreakDoorComponent>();
-														bd_hubs.Add(hub);
-														hub.SetBypassMode(true);
-														doorBreakerAll.BreakAll = true;
+														doorBreakerAll.breakAll = true;
 													}
 													else
 													{
-														bdComponent.BreakAll = true;
-														hub.SetBypassMode(true);
+														bdComponent.breakAll = true;
 													}
-												}
+
 												ev.Sender.RAMessage("Instant breaking of everything is on for all players now");
 												return;
 											}
@@ -1445,24 +1401,19 @@ namespace AdminTools
 											if (!player.TryGetComponent(out BreakDoorComponent doorBreaker))
 											{
 												ev.Sender.RAMessage($"Instant breaking of everything is on for {player.nicknameSync.MyNick}");
-												BreakDoorComponent doorBreakerAll = player.gameObject.AddComponent<BreakDoorComponent>();
-												doorBreakerAll.BreakAll = true;
-												player.SetBypassMode(true);
-												bd_hubs.Add(player);
+												doorBreak = player.gameObject.AddComponent<BreakDoorComponent>();
+												doorBreak.breakAll = true;
 											}
 											else
 											{
-												if (!doorBreaker.BreakAll)
+												if (!doorBreaker.breakAll)
 												{
 													ev.Sender.RAMessage($"Instant breaking of everything is on for {player.nicknameSync.MyNick}");
-													doorBreaker.BreakAll = true;
-													player.SetBypassMode(true);
+													doorBreaker.breakAll = true;
 													return;
 												}
 												ev.Sender.RAMessage($"Instant breaking of everything is off for {player.nicknameSync.MyNick}");
 												UnityEngine.Object.Destroy(doorBreaker);
-												player.SetBypassMode(false);
-												bd_hubs.Remove(player);
 											}
 											break;
 										default:
@@ -1474,10 +1425,7 @@ namespace AdminTools
 						}
 						break;
 					case "strip":
-						if (!CommandProcessor.CheckPermissions(ev.Sender, args[0].ToUpper(), PlayerPermissions.PlayersManagement, "AdminTools", false))
-						{
-							return;
-						}
+						if (!CommandProcessor.CheckPermissions(ev.Sender, args[0].ToUpper(), PlayerPermissions.PlayersManagement, "AdminTools", false)) return;
 						ev.Allow = false;
 						if (args.Length < 2)
 						{
@@ -1536,7 +1484,7 @@ namespace AdminTools
 		{
 			for (int i = 0; i < count; i++)
 			{
-				player.gameObject.GetComponent<RagdollManager>().SpawnRagdoll(player.gameObject.transform.position + (Vector3.up * 5),
+				player.gameObject.GetComponent<RagdollManager>().SpawnRagdoll(player.gameObject.transform.position + Vector3.up * 5,
 					Quaternion.identity, Vector3.zero, role,
 					new PlayerStats.HitInfo(1000f, player.characterClassManager.UserId, DamageTypes.Falldown,
 						player.queryProcessor.PlayerId), false, "SCP-343", "SCP-343", 0);
@@ -1572,7 +1520,7 @@ namespace AdminTools
 
 			rh.characterClassManager.SetPlayersClass(RoleType.Tutorial, rh.gameObject, true);
 			yield return Timing.WaitForSeconds(1f);
-			var d = UnityEngine.Object.FindObjectsOfType<Door>();
+			Door[] d = UnityEngine.Object.FindObjectsOfType<Door>();
 			foreach (Door door in d)
 				if (door.DoorName == "SURFACE_GATE")
 					rh.playerMovementSync.OverridePosition(door.transform.position + Vector3.up * 2, 0f);
@@ -1665,7 +1613,7 @@ namespace AdminTools
 		public IEnumerator<float> DoJail(ReferenceHub rh, bool skipadd = false)
 		{
 			List<ItemType> items = new List<ItemType>();
-			foreach (var item in rh.inventory.items)
+			foreach (Inventory.SyncItemInfo item in rh.inventory.items)
 				items.Add(item.id);
 			if (!skipadd)
 				plugin.JailedPlayers.Add(new Jailed
@@ -1687,7 +1635,7 @@ namespace AdminTools
 
 		private IEnumerator<float> DoUnJail(ReferenceHub rh)
 		{
-			var jail = plugin.JailedPlayers.Find(j => j.Userid == rh.characterClassManager.UserId);
+			Jailed jail = plugin.JailedPlayers.Find(j => j.Userid == rh.characterClassManager.UserId);
 			rh.characterClassManager.SetClassID(jail.Role);
 			foreach (ItemType item in jail.Items)
 				rh.inventory.AddNewItem(item);
@@ -1771,18 +1719,10 @@ namespace AdminTools
 				ev.Player.characterClassManager.GodMode = ev.Role == RoleType.Tutorial;
 		}
 
-		public void OnPlayerLeave(PlayerLeaveEvent ev)
+		public void OnWaitingForPlayers()
 		{
-			if (ik_hubs.Contains(ev.Player))
-				ik_hubs.Remove(ev.Player);
-			if (bd_hubs.Contains(ev.Player))
-				bd_hubs.Remove(ev.Player);
-		}
-
-		public void OnRoundStart()
-		{
-			ik_hubs.Clear();
-			bd_hubs.Clear();
+			Plugin.IkHubs.Clear();
+			Plugin.BdHubs.Clear();
 		}
 	}
 }

@@ -10,6 +10,8 @@ namespace AdminTools
 	{
 		public EventHandlers EventHandlers;
 		public List<Jailed> JailedPlayers = new List<Jailed>();
+		public static Dictionary<ReferenceHub, InstantKillComponent> IkHubs = new Dictionary<ReferenceHub, InstantKillComponent>();
+		public static Dictionary<ReferenceHub, BreakDoorComponent> BdHubs = new Dictionary<ReferenceHub, BreakDoorComponent>();
 		public string OverwatchFilePath;
 		public string HiddenTagsFilePath;
 		public bool GodTuts;
@@ -46,8 +48,7 @@ namespace AdminTools
 				Events.RoundEndEvent += EventHandlers.OnRoundEnd;
 				Events.TriggerTeslaEvent += EventHandlers.OnTriggerTesla;
 				Events.SetClassEvent += EventHandlers.OnSetClass;
-				Events.PlayerLeaveEvent += EventHandlers.OnPlayerLeave;
-				Events.RoundStartEvent += EventHandlers.OnRoundStart;
+				Events.WaitingForPlayersEvent += EventHandlers.OnWaitingForPlayers;
 				HarmonyInstance instance = HarmonyInstance.Create($"com.joker.admintools.{PatchCounter}");
 				instance.PatchAll();
 			}
@@ -70,8 +71,7 @@ namespace AdminTools
 			Events.RoundEndEvent -= EventHandlers.OnRoundEnd;
 			Events.TriggerTeslaEvent -= EventHandlers.OnTriggerTesla;
 			Events.SetClassEvent -= EventHandlers.OnSetClass;
-			Events.PlayerLeaveEvent -= EventHandlers.OnPlayerLeave;
-			Events.RoundStartEvent -= EventHandlers.OnRoundStart;
+			Events.WaitingForPlayersEvent -= EventHandlers.OnWaitingForPlayers;
 			EventHandlers = null;
 		}
 
