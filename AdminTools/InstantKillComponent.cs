@@ -1,38 +1,38 @@
-﻿using EXILED;
-using EXILED.Extensions;
-using System;
+﻿using Exiled.API.Features;
+using Exiled.Events.Handlers.EventArgs;
 using UnityEngine;
+using Handlers = Exiled.Events.Handlers;
 
 namespace AdminTools
 {
     public class InstantKillComponent : MonoBehaviour
     {
-        public ReferenceHub hub;
+        public Player player;
         public void Awake()
         {
-            hub = gameObject.GetPlayer();
-            Events.PlayerHurtEvent += RunWhenPlayerIsHurt;
-            Events.PlayerLeaveEvent += OnLeave;
-            Plugin.IkHubs.Add(hub, this);
+            player = Player.Get(gameObject);
+            Handlers.Player.Hurting += RunWhenPlayerIsHurt;
+            Handlers.Player.Left += OnLeave;
+            Plugin.IkHubs.Add(player, this);
         }
         
-        private void OnLeave(PlayerLeaveEvent ev)
+        private void OnLeave(LeftEventArgs ev)
         {
-            if (ev.Player == hub)
+            if (ev.Player == player)
                 Destroy(this);
         }
 
         public void OnDestroy()
         {
-            Events.PlayerHurtEvent -= RunWhenPlayerIsHurt;
-            Events.PlayerLeaveEvent -= OnLeave;
-            Plugin.IkHubs.Remove(hub);
+            Handlers.Player.Hurting -= RunWhenPlayerIsHurt;
+            Handlers.Player.Left -= OnLeave;
+            Plugin.IkHubs.Remove(player);
         }
 
-        public void RunWhenPlayerIsHurt(ref PlayerHurtEvent plyHurt)
+        public void RunWhenPlayerIsHurt(HurtingEventArgs ev)
         {
-            if (plyHurt.Attacker != plyHurt.Player && plyHurt.Attacker == hub) 
-                plyHurt.Amount = int.MaxValue;
+            if (ev.Attacker != ev.Target && ev.Attacker == player) 
+                ev.Amount = int.MaxValue;
         }
     }
 }

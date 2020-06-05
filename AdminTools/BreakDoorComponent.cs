@@ -1,39 +1,39 @@
-﻿using System;
+﻿using Exiled.API.Features;
+using Exiled.Events.Handlers.EventArgs;
 using UnityEngine;
-using EXILED;
-using EXILED.Extensions;
-using UnityEngine.Serialization;
+using Handlers = Exiled.Events.Handlers;
 
 namespace AdminTools
 {
     public class BreakDoorComponent : MonoBehaviour
     {
-        public ReferenceHub hub;
+        public Player player;
         public bool breakAll = false;
         string[] unbreakableDoorNames = { "079_FIRST", "079_SECOND", "372", "914", "CHECKPOINT_ENT", "CHECKPOINT_LCZ_A", "CHECKPOINT_LCZ_B", "GATE_A", "GATE_B", "SURFACE_GATE" };
 
         public void Awake()
         {
-            Events.DoorInteractEvent += OnDoorInteract;
-            Events.PlayerLeaveEvent += OnLeave;
-            hub = gameObject.GetPlayer();
+            Handlers.Player.InteractingDoor += OnDoorInteract;
+            Handlers.Player.Left += OnLeave;
+            player = Player.Get(gameObject);
+            player.IsBypassModeEnabled = true;
         }
 
-        private void OnLeave(PlayerLeaveEvent ev)
+        private void OnLeave(LeftEventArgs ev)
         {
-            if (ev.Player == hub)
+            if (ev.Player == player)
                 Destroy(this);
         }
 
-        private void OnDoorInteract(ref DoorInteractionEvent doorInter)
+        private void OnDoorInteract(InteractingDoorEventArgs ev)
         {
-            if (doorInter.Player != hub)
+            if (ev.Player != player)
                 return;
 
-            if (!unbreakableDoorNames.Contains(doorInter.Door.DoorName))
-                BreakDoor(doorInter.Door);
+            if (!unbreakableDoorNames.Contains(ev.Door.DoorName))
+                BreakDoor(ev.Door);
             else if (breakAll)
-                BreakDoor(doorInter.Door);
+                BreakDoor(ev.Door);
         }
 
         private void BreakDoor(Door door)
@@ -45,11 +45,11 @@ namespace AdminTools
 
         public void OnDestroy()
         {
-            Events.DoorInteractEvent -= OnDoorInteract;
-            Events.PlayerLeaveEvent -= OnLeave;
-            hub.SetBypassMode(false);
+            Handlers.Player.InteractingDoor -= OnDoorInteract;
+            Handlers.Player.Left -= OnLeave;
+            player.IsBypassModeEnabled = false;
             breakAll = false;
-            Plugin.BdHubs.Remove(hub);
+            Plugin.BdHubs.Remove(player);
         }
     }
 }

@@ -2,15 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using EXILED;
-using EXILED.Extensions;
+using Exiled.API.Features;
+using Exiled.Events.Handlers.EventArgs;
+using Exiled.Permissions.Extensions;
 using GameCore;
 using Grenades;
 using MEC;
 using Mirror;
 using RemoteAdmin;
 using UnityEngine;
-using Log = EXILED.Log;
+using Log = Exiled.API.Features.Log;
 using Object = UnityEngine.Object;
 
 namespace AdminTools
@@ -20,11 +21,11 @@ namespace AdminTools
 		private readonly Plugin plugin;
 		public EventHandlers(Plugin plugin) => this.plugin = plugin;
 
-		public void OnCommand(ref RACommandEvent ev)
+		public void OnCommand(SendingRemoteAdminCommandEventArgs ev)
 		{
 			try
 			{
-				if (ev.Command.Contains("REQUEST_DATA PLAYER_LIST SILENT"))
+				if (ev.Name.Contains("REQUEST_DATA PLAYER_LIST"))
 					return;
 
 				string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
@@ -36,100 +37,104 @@ namespace AdminTools
 				if (!File.Exists(fileName))
 					File.Create(fileName).Close();
 				string data =
-					$"{DateTime.Now}: {ev.Sender.Nickname} ({ev.Sender.SenderId}) executed: {ev.Command} {Environment.NewLine}";
+					$"{DateTime.Now}: {ev.Sender.Nickname} ({ev.Sender.Id}) executed: {ev.Name} {Environment.NewLine}";
 				File.AppendAllText(fileName, data);
 
-				string[] args = ev.Command.Split(' ');
-				ReferenceHub sender = ev.Sender.SenderId == "SERVER CONSOLE" || ev.Sender.SenderId == "GAME CONSOLE" ? PlayerManager.localPlayer.GetPlayer() : Player.GetPlayer(ev.Sender.SenderId);
+				string effort = $"{ev.Name} ";
+				foreach (string s in ev.Arguments)
+					effort += $"{s} ";
+				
+				string[] args = effort.Split(' ');
+				Player sender = ev.Sender;
 
 				switch (args[0].ToLower())
 				{
 					case "kick":
 						{
-							ev.Allow = false;
+							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.kick"))
 							{
-								ev.Sender.RAMessage("Permission denied.");
+								ev.Sender.RemoteAdminMessage("Permission denied.");
 								return;
 							}
 							IEnumerable<string> reasons = args.Where(s => s != args[0] && s != args[1]);
 							string reason = "";
 							foreach (string st in reasons)
 								reason += st;
-							GameObject obj = Player.GetPlayer(args[1])?.gameObject;
+							GameObject obj = Player.Get(args[1])?.GameObject;
 							if (obj == null)
 							{
-								ev.Sender.RAMessage("Player not found", false);
+								ev.Sender.RemoteAdminMessage("Player not found", false);
 								return;
 							}
 
 							ServerConsole.Disconnect(obj, $"You have been kicked from the server: {reason}");
-							ev.Sender.RAMessage("Player was kicked.");
+							ev.Sender.RemoteAdminMessage("Player was kicked.");
 							return;
 						}
 					case "muteall":
 						{
-							ev.Allow = false;
+							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.mute"))
 							{
-								ev.Sender.RAMessage("Permission denied.");
+								ev.Sender.RemoteAdminMessage("Permission denied.");
 								return;
 							}
-							foreach (ReferenceHub hub in Player.GetHubs())
-								if (!hub.serverRoles.RemoteAdmin)
-									hub.characterClassManager.SetMuted(true);
-							ev.Sender.RAMessage("All non-staff players have been muted.");
+							foreach (Player player in Player.List)
+								if (!player.ReferenceHub.serverRoles.RemoteAdmin)
+									player.IsMuted = true;
+							ev.Sender.RemoteAdminMessage("All non-staff players have been muted.");
 							return;
 						}
 					case "unmuteall":
 						{
-							ev.Allow = false;
+							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.mute"))
 							{
-								ev.Sender.RAMessage("Permission denied.");
+								ev.Sender.RemoteAdminMessage("Permission denied.");
 								return;
 							}
-							foreach (ReferenceHub hub in Player.GetHubs())
-								if (!hub.serverRoles.RemoteAdmin)
-									hub.characterClassManager.SetMuted(false);
-							ev.Sender.RAMessage("All non-staff players have been muted.");
+							foreach (Player player in Player.List)
+								if (!player.ReferenceHub.serverRoles.RemoteAdmin)
+									player.IsMuted = false;
+							ev.Sender.RemoteAdminMessage("All non-staff players have been muted.");
 							return;
 						}
 					case "rocket":
 						{
-							ev.Allow = false;
+							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.rocket"))
 							{
-								ev.Sender.RAMessage("Permission denied.");
+								ev.Sender.RemoteAdminMessage("Permission denied.");
 								return;
 							}
-							ReferenceHub hub = Player.GetPlayer(args[1]);
-							if (hub == null && args[1] != "*" && args[1] != "all")
+							Player player = Player.Get(args[1]);
+							if (player == null && args[1] != "*" && args[1] != "all")
 							{
-								ev.Sender.RAMessage("Player not found.");
+								ev.Sender.RemoteAdminMessage("Player not found.");
 								return;
 							}
 
 							if (!float.TryParse(args[2], out float result))
 							{
-								ev.Sender.RAMessage($"Speed argument invalid: {args[2]}");
+								ev.Sender.RemoteAdminMessage($"Speed argument invalid: {args[2]}");
 								return;
 							}
 
 							if (args[1] == "*" || args[1] == "all")
-								foreach (ReferenceHub h in Player.GetHubs())
+								foreach (Player h in Player.List)
 									Timing.RunCoroutine(DoRocket(h, result));
 							else
-								Timing.RunCoroutine(DoRocket(hub, result));
-							ev.Sender.RAMessage("We're going on a trip, in our favorite rocketship.");
+								Timing.RunCoroutine(DoRocket(player, result));
+							ev.Sender.RemoteAdminMessage("We're going on a trip, in our favorite rocketship.");
 							return;
 						}
 					case "bc":
 						{
-							ev.Allow = false;
+							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.bc"))
 							{
-								ev.Sender.RAMessage("Permission denied.");
+								ev.Sender.RemoteAdminMessage("Permission denied.");
 								return;
 							}
 							IEnumerable<string> thing = args.Skip(2);
@@ -141,29 +146,29 @@ namespace AdminTools
 								p.GetComponent<Broadcast>()
 									.TargetAddElement(p.GetComponent<Scp049_2PlayerScript>().connectionToClient, msg, (ushort)time,
 										Broadcast.BroadcastFlags.Normal);
-							ev.Sender.RAMessage("Broadcast Sent.");
+							ev.Sender.RemoteAdminMessage("Broadcast Sent.");
 							break;
 						}
 					case "id":
 						{
-							ev.Allow = false;
-							ReferenceHub rh = Player.GetPlayer(args[1]);
+							ev.IsAllowed = false;
+							Player player = Player.Get(args[1]);
 
-							string id = rh == null ? "Player not found" : rh.characterClassManager.UserId;
-							ev.Sender.RAMessage($"{rh.nicknameSync.MyNick} - {id}");
+							string id = player == null ? "Player not found" : player.UserId;
+							ev.Sender.RemoteAdminMessage($"{player.Nickname} - {id}");
 							break;
 						}
 					case "pbc":
 						{
-							ev.Allow = false;
+							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.bc"))
 							{
-								ev.Sender.RAMessage("Permission denied.");
+								ev.Sender.RemoteAdminMessage("Permission denied.");
 								return;
 							}
 							if (args.Length < 4)
 							{
-								ev.Sender.RAMessage(
+								ev.Sender.RemoteAdminMessage(
 									"You must provide a players name/id, a number in seconds to display the broadcast, and a message",
 									false);
 								break;
@@ -171,7 +176,7 @@ namespace AdminTools
 
 							if (!uint.TryParse(args[2], out uint result))
 							{
-								ev.Sender.RAMessage("You must provide a valid integer for a duration.", false);
+								ev.Sender.RemoteAdminMessage("You must provide a valid integer for a duration.", false);
 								break;
 							}
 
@@ -179,95 +184,88 @@ namespace AdminTools
 							string msg = "";
 							foreach (string s in thing)
 								msg += $"{s} ";
-							Player.GetPlayer(args[1])?.Broadcast((ushort)result, msg, false);
-							ev.Sender.RAMessage("Message sent.");
+							Player.Get(args[1])?.Broadcast((ushort)result, msg, Broadcast.BroadcastFlags.Normal);
+							ev.Sender.RemoteAdminMessage("Message sent.");
 							break;
 						}
 					case "tut":
 						{
-							ev.Allow = false;
+							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.tut"))
 							{
-								ev.Sender.RAMessage("Permission denied.");
+								ev.Sender.RemoteAdminMessage("Permission denied.");
 								return;
 							}
 
 							if (args.Length < 2)
 							{
-								ev.Sender.RAMessage("You must supply a player name or ID", false);
+								ev.Sender.RemoteAdminMessage("You must supply a player name or ID", false);
 								return;
 							}
 
-							ReferenceHub rh = Player.GetPlayer(string.Join(" ", args.Skip(1)));
-							if (rh == null)
+							Player player = Player.Get(string.Join(" ", args.Skip(1)));
+							if (player == null)
 							{
-								ev.Sender.RAMessage("Player not found.", false);
+								ev.Sender.RemoteAdminMessage("Player not found.", false);
 								return;
 							}
 
-							if (rh.characterClassManager.CurClass != RoleType.Tutorial)
+							if (player.Role != RoleType.Tutorial)
 							{
-								Timing.RunCoroutine(DoTut(rh));
-								ev.Sender.RAMessage("Player set as tutorial.");
+								Timing.RunCoroutine(DoTut(player));
+								ev.Sender.RemoteAdminMessage("Player set as tutorial.");
 							}
 							else
 							{
-								ev.Sender.RAMessage("Player unset as Tutorial (killed).");
-								rh.characterClassManager.SetPlayersClass(RoleType.Spectator, rh.gameObject);
+								ev.Sender.RemoteAdminMessage("Player unset as Tutorial (killed).");
+								player.Role = RoleType.Spectator;
 							}
 
 							break;
 						}
 					case "hidetags":
-						ev.Allow = false;
+						ev.IsAllowed = false;
 						if (!sender.CheckPermission("at.tags"))
 						{
-							ev.Sender.RAMessage("Permission denied.");
+							ev.Sender.RemoteAdminMessage("Permission denied.");
 							return;
 						}
-						foreach (ReferenceHub hub in Player.GetHubs())
-							if (hub.serverRoles.RemoteAdmin)
+						foreach (Player player in Player.List)
+							if (player.ReferenceHub.serverRoles.RemoteAdmin)
 							{
-								hub.serverRoles.HiddenBadge = hub.serverRoles.MyText;
-								hub.serverRoles.NetworkGlobalBadge = null;
-								hub.serverRoles.SetText(null);
-								hub.serverRoles.SetColor(null);
-								hub.serverRoles.RefreshHiddenTag();
+								player.HideTag();
 							}
 
-						ev.Sender.RAMessage("All staff tags hidden.");
+						ev.Sender.RemoteAdminMessage("All staff tags hidden.");
 
 						break;
 					case "showtags":
-						ev.Allow = false;
+						ev.IsAllowed = false;
 						if (!sender.CheckPermission("at.tags"))
 						{
-							ev.Sender.RAMessage("Permission denied.");
+							ev.Sender.RemoteAdminMessage("Permission denied.");
 							return;
 						}
-						foreach (ReferenceHub hub in Player.GetHubs())
-							if (hub.serverRoles.RemoteAdmin && !hub.serverRoles.RaEverywhere)
+						foreach (Player player in Player.List)
+							if (player.ReferenceHub.serverRoles.RemoteAdmin && !player.ReferenceHub.serverRoles.RaEverywhere)
 							{
-								hub.serverRoles.HiddenBadge = null;
-								hub.serverRoles.RpcResetFixed();
-								hub.serverRoles.RefreshPermissions(true);
+								player.ShowTag();
 							}
 
-						ev.Sender.RAMessage("All staff tags shown.");
+						ev.Sender.RemoteAdminMessage("All staff tags shown.");
 
 						break;
 					case "jail":
 						{
-							ev.Allow = false;
+							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.jail"))
 							{
-								ev.Sender.RAMessage("Permission denied.");
+								ev.Sender.RemoteAdminMessage("Permission denied.");
 								return;
 							}
 							if (args.Length < 2)
 							{
-								ev.Sender.RaReply("Joker's Plugin#You must supply a player name or ID", false, true,
-									string.Empty);
+								ev.Sender.RemoteAdminMessage("You must supply a player name or ID", false);
 								return;
 							}
 
@@ -275,39 +273,39 @@ namespace AdminTools
 							string filter = null;
 							foreach (string s in array)
 								filter += s;
-							ReferenceHub target = Player.GetPlayer(filter);
+							Player target = Player.Get(filter);
 							if (target == null)
-								ev.Sender.RaReply("Joker's Plugin#User not found.", false, true, string.Empty);
-							if (plugin.JailedPlayers.Any(j => j.Userid == target.characterClassManager.UserId))
+								ev.Sender.RemoteAdminMessage("User not found.", false);
+							if (plugin.JailedPlayers.Any(j => j.Userid == target.UserId))
 							{
 								Timing.RunCoroutine(DoUnJail(target));
-								ev.Sender.RaReply("Joker's Plugin#User unjailed.", true, true, string.Empty);
+								ev.Sender.RemoteAdminMessage("Joker's Plugin#User unjailed.", true);
 							}
 							else
 							{
 								Timing.RunCoroutine(DoJail(target));
-								ev.Sender.RaReply("Joker's Plugin#User jailed.", true, true, string.Empty);
+								ev.Sender.RemoteAdminMessage("User jailed.", true);
 							}
 
 							break;
 						}
 					case "abc":
 						{
-							ev.Allow = false;
+							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.bc"))
 							{
-								ev.Sender.RAMessage("Permission denied.");
+								ev.Sender.RemoteAdminMessage("Permission denied.");
 								return;
 							}
 							if (args.Length < 3)
 							{
-								ev.Sender.RAMessage("You must include a duration and a message.", false);
+								ev.Sender.RemoteAdminMessage("You must include a duration and a message.", false);
 								return;
 							}
 
 							if (!uint.TryParse(args[1], out uint result))
 							{
-								ev.Sender.RAMessage("You must provide a valid integer for a duration.", false);
+								ev.Sender.RemoteAdminMessage("You must provide a valid integer for a duration.", false);
 								break;
 							}
 
@@ -315,36 +313,35 @@ namespace AdminTools
 							string msg = "";
 							foreach (string s in thing2)
 								msg += $"{s} ";
-							foreach (GameObject o in PlayerManager.players)
+							foreach (Player player in Player.List)
 							{
-								ReferenceHub rh = o.GetComponent<ReferenceHub>();
-								if (rh.serverRoles.RemoteAdmin)
-									rh.Broadcast((ushort)result, $"{ev.Sender.Nickname}: {msg}", false);
+								if (player.ReferenceHub.serverRoles.RemoteAdmin)
+									player.Broadcast((ushort)result, $"{ev.Sender.Nickname}: {msg}", Broadcast.BroadcastFlags.AdminChat);
 							}
 
-							ev.Sender.RAMessage("Message sent to all online staff members.");
+							ev.Sender.RemoteAdminMessage("Message sent to all online staff members.");
 
 							break;
 						}
 					case "drop":
 						{
-							ev.Allow = false;
+							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.items"))
 							{
-								ev.Sender.RAMessage("Permission denied.");
+								ev.Sender.RemoteAdminMessage("Permission denied.");
 								return;
 							}
 							int result;
 							if (args.Length != 4)
 							{
-								ev.Sender.RAMessage($"Invalid arguments.{args.Length}");
+								ev.Sender.RemoteAdminMessage($"Invalid arguments.{args.Length}");
 								break;
 							}
 
-							ReferenceHub hub = Player.GetPlayer(args[1]);
-							if (hub == null)
+							Player player = Player.Get(args[1]);
+							if (player == null)
 							{
-								ev.Sender.RAMessage("Player not found.");
+								ev.Sender.RemoteAdminMessage("Player not found.");
 								break;
 							}
 
@@ -352,129 +349,126 @@ namespace AdminTools
 
 							if (!int.TryParse(args[3], out result))
 							{
-								ev.Sender.RAMessage("Not a number doufus.");
+								ev.Sender.RemoteAdminMessage("Not a number doufus.");
 								break;
 							}
 
 							if (result > 200)
 							{
-								ev.Sender.RAMessage("Try a lower number that won't crash my servers, ty.");
+								ev.Sender.RemoteAdminMessage("Try a lower number that won't crash my servers, ty.");
 								return;
 							}
 
 							for (int i = 0; i < result; i++)
-								SpawnItem(item, hub.gameObject.transform.position, Vector3.zero);
-							ev.Sender.RAMessage("Done. hehexd");
+								SpawnItem(item, player.Position, Vector3.zero);
+							ev.Sender.RemoteAdminMessage("Done. hehexd");
 							return;
 						}
 					case "pos":
 						{
-							ev.Allow = false;
+							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.tp"))
 							{
-								ev.Sender.RAMessage("Permission denied.");
+								ev.Sender.RemoteAdminMessage("Permission denied.");
 								return;
 							}
 
 							if (args.Length < 3)
 							{
-								ev.Sender.RAMessage("You must supply a player name/ID and a subcommand.", false);
+								ev.Sender.RemoteAdminMessage("You must supply a player name/ID and a subcommand.", false);
 								return;
 							}
 
-							List<ReferenceHub> hubs = new List<ReferenceHub>();
+							List<Player> players = new List<Player>();
 							if (args[1].ToLower() == "*" || args[1].ToLower() == "all")
 							{
-								foreach (ReferenceHub hub in Player.GetHubs())
-									if (hub.characterClassManager.CurClass != RoleType.Spectator)
-										hubs.Add(hub);
+								foreach (Player player in Player.List)
+									if (player.Role != RoleType.Spectator)
+										players.Add(player);
 							}
 							else
 							{
-								ReferenceHub rh = Player.GetPlayer(args[1]);
-								if (rh == null)
+								Player player = Player.Get(args[1]);
+								if (player == null)
 								{
-									ev.Sender.RAMessage("Player not found.", false);
+									ev.Sender.RemoteAdminMessage("Player not found.", false);
 									return;
 								}
-								hubs.Add(rh);
+								players.Add(player);
 							}
 
-							foreach (ReferenceHub rh in hubs)
+							foreach (Player player in players)
 								switch (args[2].ToLower())
 								{
 									case "set":
 									{
 										if (args.Length < 6)
 										{
-											ev.Sender.RAMessage("You must supply x, y and z coordinated.", false);
+											ev.Sender.RemoteAdminMessage("You must supply x, y and z coordinated.", false);
 											return;
 										}
 
 										if (!float.TryParse(args[3], out float x))
 										{
-											ev.Sender.RAMessage("Invalid x coordinates.");
+											ev.Sender.RemoteAdminMessage("Invalid x coordinates.");
 											return;
 										}
 
 										if (!float.TryParse(args[4], out float y))
 										{
-											ev.Sender.RAMessage("Invalid y coordinates.");
+											ev.Sender.RemoteAdminMessage("Invalid y coordinates.");
 											return;
 										}
 
 										if (!float.TryParse(args[5], out float z))
 										{
-											ev.Sender.RAMessage("Invalid z coordinates.");
+											ev.Sender.RemoteAdminMessage("Invalid z coordinates.");
 											return;
 										}
 
-										rh.playerMovementSync.OverridePosition(new Vector3(x, y, z), 0f, false);
-										ev.Sender.RAMessage(
-											$"Player {rh.nicknameSync.MyNick} - {rh.characterClassManager.UserId} moved to x{x} y{y} z{z}");
+										player.Position = new Vector3(x, y, z);
+										ev.Sender.RemoteAdminMessage(
+											$"Player {player.Nickname} - {player.UserId} moved to x{x} y{y} z{z}");
 										break;
 									}
 									case "get":
 									{
-										Vector3 pos = rh.gameObject.transform.position;
+										Vector3 pos = player.Position;
 										string ret =
-											$"{rh.nicknameSync.MyNick} - {rh.characterClassManager.UserId} Position: x {pos.x} y {pos.y} z {pos.z}";
-										ev.Sender.RAMessage(ret);
+											$"{player.Nickname} - {player.UserId} Position: x {pos.x} y {pos.y} z {pos.z}";
+										ev.Sender.RemoteAdminMessage(ret);
 										break;
 									}
 									case "add":
 									{
 										if (args[3] != "x" && args[3] != "y" && args[3] != "z")
 										{
-											ev.Sender.RAMessage("Invalid coordinate plane selected.");
+											ev.Sender.RemoteAdminMessage("Invalid coordinate plane selected.");
 											return;
 										}
 
 										if (!float.TryParse(args[4], out float newPos))
 										{
-											ev.Sender.RAMessage("Invalid coordinate.");
+											ev.Sender.RemoteAdminMessage("Invalid coordinate.");
 											return;
 										}
 
-										Vector3 pos = rh.playerMovementSync.RealModelPosition;
+										Vector3 pos = player.Position;
 										switch (args[3].ToLower())
 										{
 											case "x":
-												rh.playerMovementSync.OverridePosition(
-													new Vector3(pos.x + newPos, pos.y, pos.z), 0f);
+												player.Position = new Vector3(pos.x + newPos, pos.y, pos.z);
 												break;
 											case "y":
-												rh.playerMovementSync.OverridePosition(
-													new Vector3(pos.x, pos.y + newPos, pos.z), 0f);
+												player.Position = new Vector3(pos.x, pos.y + newPos, pos.z);
 												break;
 											case "z":
-												rh.playerMovementSync.OverridePosition(
-													new Vector3(pos.x, pos.y, pos.z + newPos), 0f);
+												player.Position = new Vector3(pos.x, pos.y, pos.z + newPos);
 												break;
 										}
 
-										ev.Sender.RAMessage(
-											$"Player {rh.nicknameSync.MyNick} - {rh.characterClassManager.UserId} position changed.");
+										ev.Sender.RemoteAdminMessage(
+											$"Player {player.Nickname} - {player.UserId} position changed.");
 										break;
 									}
 								}
@@ -483,275 +477,275 @@ namespace AdminTools
 						}
 					case "tpx":
 						{
-							ev.Allow = false;
+							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.tp"))
 							{
-								ev.Sender.RAMessage("Permission denied.");
+								ev.Sender.RemoteAdminMessage("Permission denied.");
 								return;
 							}
 
 							if (args.Length < 3)
 							{
-								ev.Sender.RAMessage(
+								ev.Sender.RemoteAdminMessage(
 									"You must supply a player name/ID to teleport and a player name/ID to teleport them to.");
 								return;
 							}
 
-							List<ReferenceHub> hubs = new List<ReferenceHub>();
+							List<Player> players = new List<Player>();
 							if (args[1].ToLower() == "*" || args[1].ToLower() == "all")
 							{
-								foreach (ReferenceHub hub in Player.GetHubs())
-									if (hub.characterClassManager.CurClass != RoleType.Spectator)
-										hubs.Add(hub);
+								foreach (Player player in Player.List)
+									if (player.Role != RoleType.Spectator)
+										players.Add(player);
 							}
 							else
 							{
-								ReferenceHub rh = Player.GetPlayer(args[1]);
-								if (rh == null)
+								Player player = Player.Get(args[1]);
+								if (player == null)
 								{
-									ev.Sender.RAMessage("Player not found.", false);
+									ev.Sender.RemoteAdminMessage("Player not found.", false);
 									return;
 								}
-								hubs.Add(rh);
+								players.Add(player);
 							}
-							ReferenceHub target = Player.GetPlayer(args[2]);
+							Player target = Player.Get(args[2]);
 
 							if (target == null)
 							{
-								ev.Sender.RAMessage($"Player {args[2]} not found.");
+								ev.Sender.RemoteAdminMessage($"Player {args[2]} not found.");
 								return;
 							}
 
-							foreach (ReferenceHub rh in hubs)
+							foreach (Player player in players)
 							{
-								rh.playerMovementSync.OverridePosition(target.playerMovementSync.RealModelPosition, 0f, false);
-								ev.Sender.RAMessage($"{rh.nicknameSync.MyNick} teleported to {target.nicknameSync.MyNick}");
+								player.Position = target.Position;
+								ev.Sender.RemoteAdminMessage($"{player.Nickname} teleported to {target.Nickname}");
 							}
 
 							break;
 						}
 					case "ghost":
 						{
-							ev.Allow = false;
+							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.ghost"))
 							{
-								ev.Sender.RAMessage("Permission denied.");
+								ev.Sender.RemoteAdminMessage("Permission denied.");
 								return;
 							}
 							if (args.Length < 2)
 							{
-								ev.Sender.RAMessage("You must supply a playername to ghost.", false);
+								ev.Sender.RemoteAdminMessage("You must supply a playername to ghost.", false);
 								return;
 							}
 
-							ReferenceHub rh = Player.GetPlayer(args[1]);
-							if (rh == null)
+							Player player = Player.Get(args[1]);
+							if (player == null)
 							{
-								ev.Sender.RAMessage("Player not found.", false);
+								ev.Sender.RemoteAdminMessage("Player not found.", false);
 								return;
 							}
 
-							if (EventPlugin.GhostedIds.Contains(rh.queryProcessor.PlayerId))
+							if (player.IsInvisible)
 							{
-								EventPlugin.GhostedIds.Remove(rh.queryProcessor.PlayerId);
-								ev.Sender.RAMessage($"{rh.nicknameSync.MyNick} removed from ghostmode.");
+								player.IsInvisible = false;
+								ev.Sender.RemoteAdminMessage($"{player.Nickname} removed from ghostmode.");
 								return;
 							}
 
-							EventPlugin.GhostedIds.Add(rh.queryProcessor.PlayerId);
-							ev.Sender.RAMessage($"{rh.nicknameSync.MyNick} ghosted.");
+							player.IsInvisible = true;
+							ev.Sender.RemoteAdminMessage($"{player.Nickname} ghosted.");
 							return;
 						}
 					case "scale":
 						{
-							ev.Allow = false;
+							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.size"))
 							{
-								ev.Sender.RAMessage("Permission denied.");
+								ev.Sender.RemoteAdminMessage("Permission denied.");
 								return;
 							}
 							if (args.Length < 3)
 							{
-								ev.Sender.RAMessage("You must provide a target and scale size.");
+								ev.Sender.RemoteAdminMessage("You must provide a target and scale size.");
 								return;
 							}
 
 							if (!float.TryParse(args[2], out float scale))
 							{
-								ev.Sender.RAMessage("Invalid scale size selected.");
+								ev.Sender.RemoteAdminMessage("Invalid scale size selected.");
 								return;
 							}
 
-							List<ReferenceHub> hubs = new List<ReferenceHub>();
+							List<Player> players = new List<Player>();
 							if (args[1].ToLower() == "*" || args[1].ToLower() == "all")
 							{
-								foreach (ReferenceHub hub in Player.GetHubs())
-									if (hub.characterClassManager.CurClass != RoleType.Spectator)
-										hubs.Add(hub);
+								foreach (Player player in Player.List)
+									if (player.Role != RoleType.Spectator)
+										players.Add(player);
 							}
 							else
 							{
-								ReferenceHub rh = Player.GetPlayer(args[1]);
-								if (rh == null)
+								Player player = Player.Get(args[1]);
+								if (player == null)
 								{
-									ev.Sender.RAMessage("Player not found.", false);
+									ev.Sender.RemoteAdminMessage("Player not found.", false);
 									return;
 								}
-								hubs.Add(rh);
+								players.Add(player);
 							}
 
-							foreach (ReferenceHub rh in hubs)
+							foreach (Player player in players)
 							{
-								SetPlayerScale(rh.gameObject, scale);
-								ev.Sender.RAMessage($"{rh.nicknameSync.MyNick} size set to {scale}");
+								SetPlayerScale(player.GameObject, scale);
+								ev.Sender.RemoteAdminMessage($"{player.Nickname} size set to {scale}");
 							}
 
 							return;
 						}
 					case "size":
 						{
-							ev.Allow = false;
+							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.size"))
 							{
-								ev.Sender.RAMessage("Permission denied.");
+								ev.Sender.RemoteAdminMessage("Permission denied.");
 								return;
 							}
 							if (args.Length < 5)
 							{
-								ev.Sender.RAMessage("You must provide a target, x size, y size and z size.", false);
+								ev.Sender.RemoteAdminMessage("You must provide a target, x size, y size and z size.", false);
 								return;
 							}
 
 							if (!float.TryParse(args[2], out float x))
 							{
-								ev.Sender.RAMessage($"Invalid x size: {args[2]}", false);
+								ev.Sender.RemoteAdminMessage($"Invalid x size: {args[2]}", false);
 								return;
 							}
 
 							if (!float.TryParse(args[3], out float y))
 							{
-								ev.Sender.RAMessage($"Invalid y size: {args[3]}", false);
+								ev.Sender.RemoteAdminMessage($"Invalid y size: {args[3]}", false);
 								return;
 							}
 
 							if (!float.TryParse(args[4], out float z))
 							{
-								ev.Sender.RAMessage($"Invalid z size: {args[4]}", false);
+								ev.Sender.RemoteAdminMessage($"Invalid z size: {args[4]}", false);
 								return;
 							}
 
-							List<ReferenceHub> hubs = new List<ReferenceHub>();
+							List<Player> players = new List<Player>();
 							if (args[1].ToLower() == "*" || args[1].ToLower() == "all")
 							{
-								foreach (ReferenceHub hub in Player.GetHubs())
-									if (hub.characterClassManager.CurClass != RoleType.Spectator)
-										hubs.Add(hub);
+								foreach (Player player in Player.List)
+									if (player.Role != RoleType.Spectator)
+										players.Add(player);
 							}
 							else
 							{
-								ReferenceHub rh = Player.GetPlayer(args[1]);
-								if (rh == null)
+								Player player = Player.Get(args[1]);
+								if (player == null)
 								{
-									ev.Sender.RAMessage("Player not found.", false);
+									ev.Sender.RemoteAdminMessage("Player not found.", false);
 									return;
 								}
-								hubs.Add(rh);
+								players.Add(player);
 							}
 
-							foreach (ReferenceHub rh in hubs)
+							foreach (Player player in players)
 							{
-								SetPlayerScale(rh.gameObject, x, y, z);
-								ev.Sender.RAMessage($"{rh.nicknameSync.MyNick}'s size has been changed.");
+								SetPlayerScale(player.GameObject, x, y, z);
+								ev.Sender.RemoteAdminMessage($"{player.Nickname}'s size has been changed.");
 							}
 
 							return;
 						}
 					case "spawnworkbench":
 						{
-							ev.Allow = false;
+							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.benches"))
 							{
-								ev.Sender.RAMessage("Permission denied.");
+								ev.Sender.RemoteAdminMessage("Permission denied.");
 								return;
 							}
 							if (args.Length < 5)
 							{
-								ev.Sender.RAMessage("Invalid number of arguments.", false);
+								ev.Sender.RemoteAdminMessage("Invalid number of arguments.", false);
 								return;
 							}
 
 							if (!float.TryParse(args[2], out float x))
 							{
-								ev.Sender.RAMessage($"Invalid x size: {args[2]}", false);
+								ev.Sender.RemoteAdminMessage($"Invalid x size: {args[2]}", false);
 								return;
 							}
 
 							if (!float.TryParse(args[3], out float y))
 							{
-								ev.Sender.RAMessage($"Invalid y size: {args[3]}", false);
+								ev.Sender.RemoteAdminMessage($"Invalid y size: {args[3]}", false);
 								return;
 							}
 
 							if (!float.TryParse(args[4], out float z))
 							{
-								ev.Sender.RAMessage($"Invalid z size: {args[4]}", false);
+								ev.Sender.RemoteAdminMessage($"Invalid z size: {args[4]}", false);
 								return;
 							}
 
-							ReferenceHub player = Player.GetPlayer(args[1]);
+							Player player = Player.Get(args[1]);
 							if (player == null)
 							{
-								ev.Sender.RAMessage($"Player not found: {args[1]}", false);
+								ev.Sender.RemoteAdminMessage($"Player not found: {args[1]}", false);
 								return;
 							}
 
 							GameObject gameObject;
-							SpawnWorkbench(player.gameObject.transform.position + (gameObject = player.gameObject).GetComponent<Scp049_2PlayerScript>().plyCam.transform.forward * 2, gameObject.transform.rotation.eulerAngles, new Vector3(x, y, z));
-							ev.Sender.RAMessage($"Ahh, yes. Enslaved game code.");
+							SpawnWorkbench(player.Position + player.ReferenceHub.PlayerCameraReference.forward * 2, player.GameObject.transform.rotation.eulerAngles, new Vector3(x, y, z));
+							ev.Sender.RemoteAdminMessage($"Ahh, yes. Enslaved game code.");
 							return;
 						}
 					case "drops":
 						{
-							ev.Allow = false;
+							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.items"))
 							{
-								ev.Sender.RAMessage("Permission denied.");
+								ev.Sender.RemoteAdminMessage("Permission denied.");
 								return;
 							}
 							if (args.Length < 4)
 							{
-								ev.Sender.RAMessage("haha no, try again with correct arguments 4head");
+								ev.Sender.RemoteAdminMessage("haha no, try again with correct arguments 4head");
 								return;
 							}
 
 							if (!float.TryParse(args[3], out float size))
 							{
-								ev.Sender.RAMessage("Invalid size");
+								ev.Sender.RemoteAdminMessage("Invalid size");
 								return;
 							}
 
-							List<ReferenceHub> hubs = new List<ReferenceHub>();
+							List<Player> players = new List<Player>();
 							if (args[1].ToLower() == "*" || args[1].ToLower() == "all")
 							{
-								foreach (ReferenceHub hub in Player.GetHubs())
-									if (hub.characterClassManager.CurClass != RoleType.Spectator)
-										hubs.Add(hub);
+								foreach (Player player in Player.List)
+									if (player.Role != RoleType.Spectator)
+										players.Add(player);
 							}
 							else
 							{
-								ReferenceHub rh = Player.GetPlayer(args[1]);
-								if (rh == null)
+								Player player = Player.Get(args[1]);
+								if (player == null)
 								{
-									ev.Sender.RAMessage("Player not found.", false);
+									ev.Sender.RemoteAdminMessage("Player not found.", false);
 									return;
 								}
-								hubs.Add(rh);
+								players.Add(player);
 							}
 							ItemType item = (ItemType)Enum.Parse(typeof(ItemType), args[2]);
 
-							foreach (ReferenceHub player in hubs)
+							foreach (Player player in players)
 							{
-								Pickup yesnt = player.inventory.SetPickup(item, -4.656647E+11f, player.transform.position,
+								Pickup yesnt = player.Inventory.SetPickup(item, -4.656647E+11f, player.Position,
 									Quaternion.identity, 0, 0, 0);
 
 								GameObject gameObject = yesnt.gameObject;
@@ -761,41 +755,41 @@ namespace AdminTools
 								NetworkServer.Spawn(yesnt.gameObject);
 							}
 
-							ev.Sender.RAMessage(
+							ev.Sender.RemoteAdminMessage(
 									$"Yay, items! With sizes!!");
 							return;
 						}
 					case "dummy":
 						{
-							ev.Allow = false;
+							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.dummy"))
 							{
-								ev.Sender.RAMessage("Permission denied.");
+								ev.Sender.RemoteAdminMessage("Permission denied.");
 								return;
 							}
 
 							if (args.Length < 6)
 							{
-								ev.Sender.RAMessage("You must supply a player, dummy role, x size, y size and z size");
+								ev.Sender.RemoteAdminMessage("You must supply a player, dummy role, x size, y size and z size");
 								return;
 							}
 
-							List<ReferenceHub> hubs = new List<ReferenceHub>();
+							List<Player> players = new List<Player>();
 							if (args[1].ToLower() == "*" || args[1].ToLower() == "all")
 							{
-								foreach (ReferenceHub hub in Player.GetHubs())
-									if (hub.characterClassManager.CurClass != RoleType.Spectator)
-										hubs.Add(hub);
+								foreach (Player player in Player.List)
+									if (player.Role != RoleType.Spectator)
+										players.Add(player);
 							}
 							else
 							{
-								ReferenceHub rh = Player.GetPlayer(args[1]);
-								if (rh == null)
+								Player player = Player.Get(args[1]);
+								if (player == null)
 								{
-									ev.Sender.RAMessage("Player not found.", false);
+									ev.Sender.RemoteAdminMessage("Player not found.", false);
 									return;
 								}
-								hubs.Add(rh);
+								players.Add(player);
 							}
 
 							RoleType role = RoleType.None;
@@ -805,85 +799,85 @@ namespace AdminTools
 							}
 							catch (Exception)
 							{
-								ev.Sender.RAMessage($"Invalid role selected: {args[2]}", false);
+								ev.Sender.RemoteAdminMessage($"Invalid role selected: {args[2]}", false);
 								return;
 							}
 
 							if (role == RoleType.None)
 							{
-								ev.Sender.RAMessage("Cannot spawn a dummy without a role.", false);
+								ev.Sender.RemoteAdminMessage("Cannot spawn a dummy without a role.", false);
 								return;
 							}
 
 							if (!float.TryParse(args[3], out float x))
 							{
-								ev.Sender.RAMessage("Invalid x value.");
+								ev.Sender.RemoteAdminMessage("Invalid x value.");
 								return;
 							}
 							if (!float.TryParse(args[4], out float y))
 							{
-								ev.Sender.RAMessage("Invalid y value.");
+								ev.Sender.RemoteAdminMessage("Invalid y value.");
 								return;
 							}
 							if (!float.TryParse(args[5], out float z))
 							{
-								ev.Sender.RAMessage("Invalid z value.");
+								ev.Sender.RemoteAdminMessage("Invalid z value.");
 								return;
 							}
 
-							foreach (ReferenceHub player in hubs)
-								SpawnDummyModel(player.GetPosition(), player.gameObject.transform.localRotation, role, x, y,
+							foreach (Player player in players)
+								SpawnDummyModel(player.Position, player.GameObject.transform.localRotation, role, x, y,
 									z);
 
-							ev.Sender.RAMessage("Dummy(s) spawned.");
+							ev.Sender.RemoteAdminMessage("Dummy(s) spawned.");
 							break;
 						}
 					case "ragdoll":
 						{
-							ev.Allow = false;
+							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.dolls"))
 							{
-								ev.Sender.RAMessage("Permission denied.");
+								ev.Sender.RemoteAdminMessage("Permission denied.");
 								return;
 							}
 							if (args.Length < 4)
 							{
-								ev.Sender.RAMessage("Try again");
+								ev.Sender.RemoteAdminMessage("Try again");
 								return;
 							}
 
 							if (!int.TryParse(args[3], out int count))
 							{
-								ev.Sender.RAMessage("Invalid number selected.");
+								ev.Sender.RemoteAdminMessage("Invalid number selected.");
 								return;
 							}
 
 							if (!int.TryParse(args[2], out int role))
 							{
-								ev.Sender.RAMessage("Invalid roleID");
+								ev.Sender.RemoteAdminMessage("Invalid roleID");
 								return;
 							}
 
-							List<ReferenceHub> hubs = new List<ReferenceHub>();
+							List<Player> players = new List<Player>();
 							if (args[1].ToLower() == "*" || args[1].ToLower() == "all")
 							{
-								foreach (ReferenceHub hub in Player.GetHubs())
-									if (hub.characterClassManager.CurClass != RoleType.Spectator)
-										hubs.Add(hub);
+								foreach (Player player in Player.List)
+									if (player.Role != RoleType.Spectator)
+										players.Add(player);
 							}
 							else
 							{
-								ReferenceHub rh = Player.GetPlayer(args[1]);
-								if (rh == null)
+								Player player = Player.Get(args[1]);
+								if (player == null)
 								{
-									ev.Sender.RAMessage("Player not found.", false);
+									ev.Sender.RemoteAdminMessage("Player not found.", false);
 									return;
 								}
-								hubs.Add(rh);
+								players.Add(player);
 							}
 
-							ev.Sender.RAMessage("hehexd");
-							foreach (ReferenceHub player in hubs) Timing.RunCoroutine(SpawnBodies(player, role, count));
+							ev.Sender.RemoteAdminMessage("hehexd");
+							foreach (Player player in players) Timing.RunCoroutine(SpawnBodies(player, role, count));
 
 							return;
 						}
@@ -891,74 +885,75 @@ namespace AdminTools
 						{
 							if (args[1].ToLower() == "reload")
 							{
-								ev.Allow = false;
+								ev.IsAllowed = false;
 								ServerStatic.PermissionsHandler.RefreshPermissions();
 								ConfigFile.ReloadGameConfigs();
-								ev.Sender.RAMessage($"Config files reloaded.");
+								ev.Sender.RemoteAdminMessage($"Config files reloaded.");
 							}
 
 							return;
 						}
 					case "hp":
 						{
-							ev.Allow = false;
+							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.hp"))
 							{
-								ev.Sender.RAMessage("Permission denied.");
+								ev.Sender.RemoteAdminMessage("Permission denied.");
 								return;
 							}
 							if (args.Length < 3)
 							{
-								ev.Sender.RAMessage("You must supply a player name/ID and an amount.", false);
+								ev.Sender.RemoteAdminMessage("You must supply a player name/ID and an amount.", false);
 								return;
 							}
 
 							if (!int.TryParse(args[2], out int result))
 							{
-								ev.Sender.RAMessage($"Invalid health amount: {args[2]}");
+								ev.Sender.RemoteAdminMessage($"Invalid health amount: {args[2]}");
 								return;
 							}
 
-							List<ReferenceHub> hubs = new List<ReferenceHub>();
+							List<Player> players = new List<Player>();
 							if (args[1].ToLower() == "*" || args[1].ToLower() == "all")
 							{
-								foreach (ReferenceHub hub in Player.GetHubs())
-									if (hub.characterClassManager.CurClass != RoleType.Spectator)
-										hubs.Add(hub);
+								foreach (Player player in Player.List)
+									if (player.Role != RoleType.Spectator)
+										players.Add(player);
 							}
 							else
 							{
-								ReferenceHub rh = Player.GetPlayer(args[1]);
-								if (rh == null)
+								Player player = Player.Get(args[1]);
+								if (player == null)
 								{
-									ev.Sender.RAMessage("Player not found.", false);
+									ev.Sender.RemoteAdminMessage("Player not found.", false);
 									return;
 								}
-								hubs.Add(rh);
+								players.Add(player);
 							}
 
-							foreach (ReferenceHub player in hubs)
+							foreach (Player player in players)
 							{
-								if (result > player.playerStats.maxHP) player.playerStats.maxHP = result;
+								if (result > player.MaxHealth) 
+									player.MaxHealth = result;
 
-								player.playerStats.Health = result;
-								ev.Sender.RAMessage(
-									$"{player.nicknameSync.MyNick} ({player.characterClassManager.UserId}'s health has been set to {result}");
+								player.Health = result;
+								ev.Sender.RemoteAdminMessage(
+									$"{player.Nickname} ({player.UserId}'s health has been set to {result}");
 							}
 
 							return;
 						}
 					case "cleanup":
 						{
-							ev.Allow = false;
+							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.cleanup"))
 							{
-								ev.Sender.RAMessage("Permission denied.");
+								ev.Sender.RemoteAdminMessage("Permission denied.");
 								return;
 							}
 							if (args.Length < 2)
 							{
-								ev.Sender.RAMessage("You must supply a type of cleanup: items or ragdolls.", false);
+								ev.Sender.RemoteAdminMessage("You must supply a type of cleanup: items or ragdolls.", false);
 								return;
 							}
 
@@ -968,141 +963,141 @@ namespace AdminTools
 							else if (args[1].ToLower() == "ragdolls")
 								foreach (Ragdoll doll in Object.FindObjectsOfType<Ragdoll>())
 									NetworkServer.Destroy(doll.gameObject);
-							ev.Sender.RAMessage("Cleanup complete.");
+							ev.Sender.RemoteAdminMessage("Cleanup complete.");
 							return;
 						}
 					case "grenade":
 						{
-							ev.Allow = false;
+							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.grenade"))
 							{
-								ev.Sender.RAMessage("Permission denied.");
+								ev.Sender.RemoteAdminMessage("Permission denied.");
 								return;
 							}
 
 							if (args.Length < 3)
 							{
-								ev.Sender.RAMessage($"Too few arguments. Value: {args.Length}, Expected 3");
+								ev.Sender.RemoteAdminMessage($"Too few arguments. Value: {args.Length}, Expected 3");
 								return;
 							}
 
-							List<ReferenceHub> hubs = new List<ReferenceHub>();
+							List<Player> players = new List<Player>();
 							if (args[1].ToLower() == "*" || args[1].ToLower() == "all")
 							{
-								foreach (ReferenceHub hub in Player.GetHubs())
-									if (hub.characterClassManager.CurClass != RoleType.Spectator)
-										hubs.Add(hub);
+								foreach (Player player in Player.List)
+									if (player.Role != RoleType.Spectator)
+										players.Add(player);
 							}
 							else
 							{
-								ReferenceHub rh = Player.GetPlayer(args[1]);
-								if (rh == null)
+								Player player = Player.Get(args[1]);
+								if (player == null)
 								{
-									ev.Sender.RAMessage("Player not found.", false);
+									ev.Sender.RemoteAdminMessage("Player not found.", false);
 									return;
 								}
-								hubs.Add(rh);
+								players.Add(player);
 							}
 
 							switch (args[2].ToLower())
 							{
 								case "frag":
-									foreach (ReferenceHub hub in hubs)
+									foreach (Player player in players)
 									{
-										GrenadeManager gm = hub.GetComponent<GrenadeManager>();
+										GrenadeManager gm = player.ReferenceHub.GetComponent<GrenadeManager>();
 										GrenadeSettings grenade = gm.availableGrenades.FirstOrDefault(g => g.inventoryID == ItemType.GrenadeFrag);
 										if (grenade == null)
 										{
-											ev.Sender.RAMessage($"Something broke that really really <b>really</b> shouldn't have.. Notify Joker with the following error code: GS-NRE", false);
+											ev.Sender.RemoteAdminMessage($"Something broke that really really <b>really</b> shouldn't have.. Notify Joker with the following error code: GS-NRE", false);
 											return;
 										}
 										Grenade component = Object.Instantiate(grenade.grenadeInstance).GetComponent<Grenade>();
 										component.InitData(gm, Vector3.zero, Vector3.zero, 0f);
 										NetworkServer.Spawn(component.gameObject);
 									}
-									ev.Sender.RAMessage("Tick, tick.. BOOM!");
+									ev.Sender.RemoteAdminMessage("Tick, tick.. BOOM!");
 									break;
 								case "flash":
-									foreach (ReferenceHub hub in hubs)
+									foreach (Player player in players)
 									{
-										GrenadeManager gm = hub.GetComponent<GrenadeManager>();
+										GrenadeManager gm = player.ReferenceHub.GetComponent<GrenadeManager>();
 										GrenadeSettings grenade = gm.availableGrenades.FirstOrDefault(g => g.inventoryID == ItemType.GrenadeFlash);
 										if (grenade == null)
 										{
-											ev.Sender.RAMessage($"Something broke that really really <b>really</b> shouldn't have.. Notify Joker with the following error code: GS-NRE", false);
+											ev.Sender.RemoteAdminMessage($"Something broke that really really <b>really</b> shouldn't have.. Notify Joker with the following error code: GS-NRE", false);
 											return;
 										}
 										Grenade component = Object.Instantiate(grenade.grenadeInstance).GetComponent<Grenade>();
 										component.InitData(gm, Vector3.zero, Vector3.zero, 0f);
 										NetworkServer.Spawn(component.gameObject);
 									}
-									ev.Sender.RAMessage("Don't look at the light!");
+									ev.Sender.RemoteAdminMessage("Don't look at the light!");
 									break;
 								case "ball":
-									foreach (ReferenceHub hub in hubs)
+									foreach (Player player in players)
 									{
 										Vector3 spawnrand = new Vector3(UnityEngine.Random.Range(0f, 2f), UnityEngine.Random.Range(0f, 2f), UnityEngine.Random.Range(0f, 2f));
-										GrenadeManager gm = hub.GetComponent<GrenadeManager>();
+										GrenadeManager gm = player.ReferenceHub.GetComponent<GrenadeManager>();
 										GrenadeSettings ball = gm.availableGrenades.FirstOrDefault(g => g.inventoryID == ItemType.SCP018);
 										if (ball == null)
 										{
-											ev.Sender.RAMessage($"TheMoogle broke something in his code that shouldn't have been.. Notify Joker with the error code: Mog's Balls don't work", false);
+											ev.Sender.RemoteAdminMessage($"TheMoogle broke something in his code that shouldn't have been.. Notify Joker with the error code: Mog's Balls don't work", false);
 											return;
 										}
 										Grenade component = Object.Instantiate(ball.grenadeInstance).GetComponent<Scp018Grenade>();
 										component.InitData(gm, spawnrand, Vector3.zero);
 										NetworkServer.Spawn(component.gameObject);
 									}
-									ev.Sender.RAMessage("The Balls started bouncing!");
+									ev.Sender.RemoteAdminMessage("The Balls started bouncing!");
 									break;
 								default:
-									ev.Sender.RAMessage("Enter either \"frag\", \"flash\" or \"ball\".");
+									ev.Sender.RemoteAdminMessage("Enter either \"frag\", \"flash\" or \"ball\".");
 									break;
 							}
 							break;
 						}
 					case "ball":
 						{
-							ev.Allow = false;
+							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.ball"))
 							{
-								ev.Sender.RAMessage("Permission denied.");
+								ev.Sender.RemoteAdminMessage("Permission denied.");
 								return;
 							}
 
 							if (args.Length < 2)
 							{
-								ev.Sender.RAMessage($"Too few arguments. Value: {args.Length}, Expected 2");
+								ev.Sender.RemoteAdminMessage($"Too few arguments. Value: {args.Length}, Expected 2");
 								return;
 							}
 
-							List<ReferenceHub> hubs = new List<ReferenceHub>();
+							List<Player> players = new List<Player>();
 							if (args[1].ToLower() == "*" || args[1].ToLower() == "all")
 							{
-								foreach (ReferenceHub hub in Player.GetHubs())
-									if (hub.characterClassManager.CurClass != RoleType.Spectator)
-										hubs.Add(hub);
+								foreach (Player player in Player.List)
+									if (player.Role != RoleType.Spectator)
+										players.Add(player);
 								PlayerManager.localPlayer.GetComponent<MTFRespawn>().RpcPlayCustomAnnouncement("pitch_1.5 xmas_bouncyballs", true, false);
 							}
 							else
 							{
-								ReferenceHub rh = Player.GetPlayer(args[1]);
-								if (rh == null)
+								Player player = Player.Get(args[1]);
+								if (player == null)
 								{
-									ev.Sender.RAMessage("Player not found.", false);
+									ev.Sender.RemoteAdminMessage("Player not found.", false);
 									return;
 								}
-								hubs.Add(rh);
+								players.Add(player);
 							}
 
-							foreach (ReferenceHub hub in hubs)
+							foreach (Player player in players)
 							{
 								Vector3 spawnrand = new Vector3(UnityEngine.Random.Range(0f, 2f), UnityEngine.Random.Range(0f, 2f), UnityEngine.Random.Range(0f, 2f));
-								GrenadeManager gm = hub.GetComponent<GrenadeManager>();
+								GrenadeManager gm = player.ReferenceHub.GetComponent<GrenadeManager>();
 								GrenadeSettings ball = gm.availableGrenades.FirstOrDefault(g => g.inventoryID == ItemType.SCP018);
 								if (ball == null)
 								{
-									ev.Sender.RAMessage($"TheMoogle broke something in his code that shouldn't have been.. Notify Joker with the error code: Mog's Balls don't work", false);
+									ev.Sender.RemoteAdminMessage($"TheMoogle broke something in his code that shouldn't have been.. Notify Joker with the error code: Mog's Balls don't work", false);
 									return;
 								}
 								Grenade component = Object.Instantiate(ball.grenadeInstance).GetComponent<Scp018Grenade>();
@@ -1110,59 +1105,59 @@ namespace AdminTools
 								NetworkServer.Spawn(component.gameObject);
 							}
 
-							ev.Sender.RAMessage("The Balls started bouncing!");
+							ev.Sender.RemoteAdminMessage("The Balls started bouncing!");
 							break;
 						}
 					case "kill":
 						{
-							ev.Allow = false;
+							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.kill"))
 							{
-								ev.Sender.RAMessage("Permission denied.");
+								ev.Sender.RemoteAdminMessage("Permission denied.");
 								return;
 							}
 
-							List<ReferenceHub> hubs = new List<ReferenceHub>();
+							List<Player> players = new List<Player>();
 							if (args[1].ToLower() == "*" || args[1].ToLower() == "all")
 							{
-								foreach (ReferenceHub hub in Player.GetHubs())
-									if (hub.characterClassManager.CurClass != RoleType.Spectator)
-										hubs.Add(hub);
+								foreach (Player player in Player.List)
+									if (player.Role != RoleType.Spectator)
+										players.Add(player);
 							}
 							else
 							{
-								ReferenceHub rh = Player.GetPlayer(args[1]);
-								if (rh == null)
+								Player player = Player.Get(args[1]);
+								if (player == null)
 								{
-									ev.Sender.RAMessage("Player not found.", false);
+									ev.Sender.RemoteAdminMessage("Player not found.", false);
 									return;
 								}
-								hubs.Add(rh);
+								players.Add(player);
 							}
 
-							foreach (ReferenceHub hub in hubs)
+							foreach (Player player in players)
 							{
-								int id = Player.GetPlayer(ev.Sender.SenderId) ? Player.GetPlayer(ev.Sender.SenderId).GetPlayerId() : 0;
+								int id = player.Id;
 
-								hub.playerStats.HurtPlayer(new PlayerStats.HitInfo(119000000, ev.Sender.Nickname, DamageTypes.Wall, id), hub.gameObject);
+								player.ReferenceHub.playerStats.HurtPlayer(new PlayerStats.HitInfo(119000000, ev.Sender.Nickname, DamageTypes.Wall, id), player.GameObject);
 
-								ev.Sender.RAMessage($"{hub.nicknameSync.MyNick} has been slayed.");
+								ev.Sender.RemoteAdminMessage($"{player.Nickname} has been slayed.");
 							}
 
 							break;
 						}
 					case "inv":
 						{
-							ev.Allow = false;
+							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.inv"))
 							{
-								ev.Sender.RAMessage("Permission denied.");
+								ev.Sender.RemoteAdminMessage("Permission denied.");
 								return;
 							}
 
 							if (args.Length < 3)
 							{
-								ev.Sender.RAMessage("Please provide a removal command and id");
+								ev.Sender.RemoteAdminMessage("Please provide a removal command and id");
 								return;
 							}
 
@@ -1171,128 +1166,128 @@ namespace AdminTools
 								case "drop":
 									if (args[2].ToLower() == "*" || args[2].ToLower() == "all")
 									{
-										foreach (ReferenceHub hub in Player.GetHubs())
-											if (hub.characterClassManager.CurClass != RoleType.Spectator)
-												hub.inventory.ServerDropAll();
+										foreach (Player player in Player.List)
+											if (player.Role != RoleType.Spectator)
+												player.Inventory.ServerDropAll();
 
-										ev.Sender.RAMessage("Dropped all items in everyone's inventory");
+										ev.Sender.RemoteAdminMessage("Dropped all items in everyone's inventory");
 									}
 									else
 									{
-										ReferenceHub player = Player.GetPlayer(args[2]);
+										Player player = Player.Get(args[2]);
 										if (player == null)
 										{
-											ev.Sender.RAMessage($"Player {args[2]} not found");
+											ev.Sender.RemoteAdminMessage($"Player {args[2]} not found");
 											return;
 										}
 
-										player.inventory.ServerDropAll();
-										ev.Sender.RAMessage($"Dropped all items in {player.nicknameSync.MyNick}'s inventory");
+										player.Inventory.ServerDropAll();
+										ev.Sender.RemoteAdminMessage($"Dropped all items in {player.Nickname}'s inventory");
 									}
 									break;
 								case "see":
-									ReferenceHub ply = Player.GetPlayer(args[2]);
+									Player ply = Player.Get(args[2]);
 									if (ply == null)
 									{
-										ev.Sender.RAMessage($"Player {args[2]} not found");
+										ev.Sender.RemoteAdminMessage($"Player {args[2]} not found");
 										return;
 									}
 
-									if (ply.inventory.items.Count != 0)
+									if (ply.Inventory.items.Count != 0)
 									{
-										string itemLister = $"Player {ply.nicknameSync.MyNick} has the following items in their inventory (in order): ";
-										foreach (Inventory.SyncItemInfo item in ply.inventory.items) itemLister += item.id + ", ";
+										string itemLister = $"Player {ply.Nickname} has the following items in their inventory (in order): ";
+										foreach (Inventory.SyncItemInfo item in ply.Inventory.items) itemLister += item.id + ", ";
 										itemLister = itemLister.Substring(0, itemLister.Count() - 2);
-										ev.Sender.RAMessage(itemLister);
+										ev.Sender.RemoteAdminMessage(itemLister);
 										return;
 									}
-									ev.Sender.RAMessage($"Player {ply.nicknameSync.MyNick} does not have any items in their inventory");
+									ev.Sender.RemoteAdminMessage($"Player {ply.Nickname} does not have any items in their inventory");
 									break;
 								default:
-									ev.Sender.RAMessage("Please enter either \"clear\", \"drop\", or \"see\"");
+									ev.Sender.RemoteAdminMessage("Please enter either \"clear\", \"drop\", or \"see\"");
 									break;
 							}
 							break;
 						}
 					case "ik":
 						{
-							ev.Allow = false;
+							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.ik"))
 							{
-								ev.Sender.RAMessage("Permission denied.");
+								ev.Sender.RemoteAdminMessage("Permission denied.");
 								return;
 							}
 
 							if (args.Length < 2)
 							{
-								ev.Sender.RAMessage("Please provide a id");
+								ev.Sender.RemoteAdminMessage("Please provide a id");
 								return;
 							}
 
 							if (args[1].ToLower() == "*" || args[1].ToLower() == "all")
 							{
-								foreach (ReferenceHub hub in Player.GetHubs())
-									if (!hub.TryGetComponent(out InstantKillComponent ikComponent))
+								foreach (Player player in Player.List)
+									if (!player.ReferenceHub.TryGetComponent(out InstantKillComponent _))
 									{
-										hub.gameObject.AddComponent<InstantKillComponent>();
+										player.ReferenceHub.gameObject.AddComponent<InstantKillComponent>();
 									}
 
-								ev.Sender.RAMessage("Instant killing is on for all players now");
+								ev.Sender.RemoteAdminMessage("Instant killing is on for all players now");
 							}
 							else if (args[1].ToLower() == "list")
 							{
 								if (Plugin.IkHubs.Count != 0)
 								{
 									string playerLister = "Players with instant kill on: ";
-									foreach (ReferenceHub hub in Plugin.IkHubs.Keys) 
-										playerLister += hub.nicknameSync.MyNick + ", ";
+									foreach (Player player in Plugin.IkHubs.Keys) 
+										playerLister += player.Nickname + ", ";
 									playerLister = playerLister.Substring(0, playerLister.Count() - 2);
-									ev.Sender.RAMessage(playerLister);
+									ev.Sender.RemoteAdminMessage(playerLister);
 									return;
 								}
-								ev.Sender.RAMessage("No players currently online have instant killing on");
+								ev.Sender.RemoteAdminMessage("No players currently online have instant killing on");
 							}
 							else if (args[1].ToLower() == "clear")
 							{
-								foreach (ReferenceHub hub in Plugin.IkHubs.Keys)
-									Object.Destroy(hub.GetComponent<InstantKillComponent>());
+								foreach (Player player in Plugin.IkHubs.Keys)
+									Object.Destroy(player.ReferenceHub.GetComponent<InstantKillComponent>());
 
-								ev.Sender.RAMessage("Instant killing is off for all players now");
+								ev.Sender.RemoteAdminMessage("Instant killing is off for all players now");
 							}
 							else
 							{
-								ReferenceHub ply = Player.GetPlayer(args[1]);
+								Player ply = Player.Get(args[1]);
 								if (ply == null)
 								{
-									ev.Sender.RAMessage($"Player {args[1]} not found");
+									ev.Sender.RemoteAdminMessage($"Player {args[1]} not found");
 									return;
 								}
 
-								if (!ply.TryGetComponent(out InstantKillComponent ikComponent))
+								if (!ply.ReferenceHub.TryGetComponent(out InstantKillComponent ikComponent))
 								{
-									ply.gameObject.AddComponent<InstantKillComponent>();
-									ev.Sender.RAMessage($"Instant killing is on for {ply.nicknameSync.MyNick}");
+									ply.GameObject.AddComponent<InstantKillComponent>();
+									ev.Sender.RemoteAdminMessage($"Instant killing is on for {ply.Nickname}");
 								}
 								else
 								{
 									UnityEngine.Object.Destroy(ikComponent);
-									ev.Sender.RAMessage($"Instant killing is off for {ply.nicknameSync.MyNick}");
+									ev.Sender.RemoteAdminMessage($"Instant killing is off for {ply.Nickname}");
 								}
 							}
 							break;
 						}
 					case "bd":
 						{
-							ev.Allow = false;
+							ev.IsAllowed = false;
 							if (!sender.CheckPermission("at.bd"))
 							{
-								ev.Sender.RAMessage("Permission denied.");
+								ev.Sender.RemoteAdminMessage("Permission denied.");
 								return;
 							}
 
 							if (args.Length < 2)
 							{
-								ev.Sender.RAMessage("Please provide a break command and an id (if needed) (Note: For \"list\" and \"clear\" you do not need an id)");
+								ev.Sender.RemoteAdminMessage("Please provide a break command and an id (if needed) (Note: For \"list\" and \"clear\" you do not need an id)");
 								return;
 							}
 
@@ -1305,22 +1300,22 @@ namespace AdminTools
 											if (Plugin.BdHubs.Count != 0)
 											{
 												string playerLister = "Players with break doors permissions on: ";
-												foreach (ReferenceHub hub in Plugin.BdHubs.Keys)
-													playerLister += hub.nicknameSync.MyNick + ", ";
+												foreach (Player player in Plugin.BdHubs.Keys)
+													playerLister += player.Nickname + ", ";
 												playerLister = playerLister.Substring(0, playerLister.Count() - 2);
-												ev.Sender.RAMessage(playerLister);
+												ev.Sender.RemoteAdminMessage(playerLister);
 												return;
 											}
-											ev.Sender.RAMessage("No players currently online have break door permissions on");
+											ev.Sender.RemoteAdminMessage("No players currently online have break door permissions on");
 											break;
 										case "clear":
-											foreach (ReferenceHub hub in Plugin.BdHubs.Keys)
-												Object.Destroy(hub.GetComponent<BreakDoorComponent>());
+											foreach (Player player in Plugin.BdHubs.Keys)
+												Object.Destroy(player.ReferenceHub.GetComponent<BreakDoorComponent>());
 
-											ev.Sender.RAMessage("Break door permissions is off for all players now");
+											ev.Sender.RemoteAdminMessage("Break door permissions is off for all players now");
 											break;
 										default:
-											ev.Sender.RAMessage("Please enter either \"all\", \"clear\", \"doors\", or \"list\"");
+											ev.Sender.RemoteAdminMessage("Please enter either \"all\", \"clear\", \"doors\", or \"list\"");
 											break;
 									}
 									break;
@@ -1330,56 +1325,53 @@ namespace AdminTools
 										case "doors":
 											if (args[2].ToLower() == "*" || args[2].ToLower() == "all")
 											{
-												foreach (ReferenceHub hub in Player.GetHubs())
-													if (!hub.TryGetComponent(out BreakDoorComponent bdComponent))
+												foreach (Player player in Player.List)
+													if (!player.ReferenceHub.TryGetComponent(out BreakDoorComponent bdComponent))
 													{
-														hub.gameObject.AddComponent<BreakDoorComponent>();
+														player.GameObject.AddComponent<BreakDoorComponent>();
 													}
 													else
 													{
-														hub.SetBypassMode(false);
 														bdComponent.breakAll = false;
 													}
 
-												ev.Sender.RAMessage("Instant breaking of doors is on for all players now");
+												ev.Sender.RemoteAdminMessage("Instant breaking of doors is on for all players now");
 												return;
 											}
 
-											ReferenceHub player = Player.GetPlayer(args[2]);
-											if (player == null)
+											Player ply = Player.Get(args[2]);
+											if (ply == null)
 											{
-												ev.Sender.RAMessage($"Player {args[2]} not found");
+												ev.Sender.RemoteAdminMessage($"Player {args[2]} not found");
 												return;
 											}
 
-											if (!player.TryGetComponent(out BreakDoorComponent doorBreak))
+											if (!ply.ReferenceHub.TryGetComponent(out BreakDoorComponent doorBreak))
 											{
-												ev.Sender.RAMessage($"Instant breaking of doors is on for {player.nicknameSync.MyNick}");
-												doorBreak = player.gameObject.AddComponent<BreakDoorComponent>();
+												ev.Sender.RemoteAdminMessage($"Instant breaking of doors is on for {ply.Nickname}");
+												doorBreak = ply.GameObject.AddComponent<BreakDoorComponent>();
 												doorBreak.breakAll = false;
-												player.SetBypassMode(false);
 											}
 											else
 											{
 												if (doorBreak.breakAll)
 												{
-													ev.Sender.RAMessage($"Instant breaking of doors is on for {player.nicknameSync.MyNick}");
+													ev.Sender.RemoteAdminMessage($"Instant breaking of doors is on for {ply.Nickname}");
 													doorBreak.breakAll = false;
-													player.SetBypassMode(false);
 													return;
 												}
 
-												ev.Sender.RAMessage($"Instant breaking of doors is off for {player.nicknameSync.MyNick}");
+												ev.Sender.RemoteAdminMessage($"Instant breaking of doors is off for {ply.Nickname}");
 												UnityEngine.Object.Destroy(doorBreak);
 											}
 											break;
 										case "all":
 											if (args[2].ToLower() == "*" || args[2].ToLower() == "all")
 											{
-												foreach (ReferenceHub hub in Player.GetHubs())
-													if (!hub.TryGetComponent(out BreakDoorComponent bdComponent))
+												foreach (Player player in Player.List)
+													if (!player.ReferenceHub.TryGetComponent(out BreakDoorComponent bdComponent))
 													{
-														BreakDoorComponent doorBreakerAll = hub.gameObject.AddComponent<BreakDoorComponent>();
+														BreakDoorComponent doorBreakerAll = player.GameObject.AddComponent<BreakDoorComponent>();
 														doorBreakerAll.breakAll = true;
 													}
 													else
@@ -1387,37 +1379,37 @@ namespace AdminTools
 														bdComponent.breakAll = true;
 													}
 
-												ev.Sender.RAMessage("Instant breaking of everything is on for all players now");
+												ev.Sender.RemoteAdminMessage("Instant breaking of everything is on for all players now");
 												return;
 											}
 
-											player = Player.GetPlayer(args[2]);
-											if (player == null)
+											ply = Player.Get(args[2]);
+											if (ply == null)
 											{
-												ev.Sender.RAMessage($"Player {args[2]} not found");
+												ev.Sender.RemoteAdminMessage($"Player {args[2]} not found");
 												return;
 											}
 
-											if (!player.TryGetComponent(out BreakDoorComponent doorBreaker))
+											if (!ply.ReferenceHub.TryGetComponent(out BreakDoorComponent doorBreaker))
 											{
-												ev.Sender.RAMessage($"Instant breaking of everything is on for {player.nicknameSync.MyNick}");
-												doorBreak = player.gameObject.AddComponent<BreakDoorComponent>();
+												ev.Sender.RemoteAdminMessage($"Instant breaking of everything is on for {ply.Nickname}");
+												doorBreak = ply.GameObject.AddComponent<BreakDoorComponent>();
 												doorBreak.breakAll = true;
 											}
 											else
 											{
 												if (!doorBreaker.breakAll)
 												{
-													ev.Sender.RAMessage($"Instant breaking of everything is on for {player.nicknameSync.MyNick}");
+													ev.Sender.RemoteAdminMessage($"Instant breaking of everything is on for {ply.Nickname}");
 													doorBreaker.breakAll = true;
 													return;
 												}
-												ev.Sender.RAMessage($"Instant breaking of everything is off for {player.nicknameSync.MyNick}");
+												ev.Sender.RemoteAdminMessage($"Instant breaking of everything is off for {ply.Nickname}");
 												UnityEngine.Object.Destroy(doorBreaker);
 											}
 											break;
 										default:
-											ev.Sender.RAMessage("Please enter either \"all\", \"clear\", \"doors\", or \"list\"");
+											ev.Sender.RemoteAdminMessage("Please enter either \"all\", \"clear\", \"doors\", or \"list\"");
 											break;
 									}
 									break;
@@ -1425,32 +1417,32 @@ namespace AdminTools
 						}
 						break;
 					case "strip":
-						if (!CommandProcessor.CheckPermissions(ev.Sender, args[0].ToUpper(), PlayerPermissions.PlayersManagement, "AdminTools", false)) return;
-						ev.Allow = false;
+						if (!CommandProcessor.CheckPermissions(new PlayerCommandSender(ev.Sender.ReferenceHub.queryProcessor), args[0].ToUpper(), PlayerPermissions.PlayersManagement, "AdminTools", false)) return;
+						ev.IsAllowed = false;
 						if (args.Length < 2)
 						{
-							ev.Sender.RAMessage("Syntax: strip ((id/name)/*/all)");
+							ev.Sender.RemoteAdminMessage("Syntax: strip ((id/name)/*/all)");
 							return;
 						}
 						if (args[1].ToLower() == "*" || args[1].ToLower() == "all")
 						{
-							foreach (ReferenceHub hub in Player.GetHubs())
-								if (hub.characterClassManager.CurClass != RoleType.Spectator)
-									hub.ClearInventory();
+							foreach (Player player in Player.List)
+								if (player.Role != RoleType.Spectator)
+									player.ClearInventory();
 
-							ev.Sender.RAMessage("Cleared all items in everyone's inventory");
+							ev.Sender.RemoteAdminMessage("Cleared all items in everyone's inventory");
 						}
 						else
 						{
-							ReferenceHub player = Player.GetPlayer(args[1]);
+							Player player = Player.Get(args[1]);
 							if (player == null)
 							{
-								ev.Sender.RAMessage($"Player {args[1]} not found");
+								ev.Sender.RemoteAdminMessage($"Player {args[1]} not found");
 								return;
 							}
 
 							player.ClearInventory();
-							ev.Sender.RAMessage($"Cleared all items in {player.nicknameSync.MyNick}'s inventory");
+							ev.Sender.RemoteAdminMessage($"Cleared all items in {player.Nickname}'s inventory");
 						}
 						break;
 				}
@@ -1480,14 +1472,14 @@ namespace AdminTools
 			NetworkServer.Spawn(obj);
 		}
 
-		private IEnumerator<float> SpawnBodies(ReferenceHub player, int role, int count)
+		private IEnumerator<float> SpawnBodies(Player player, int role, int count)
 		{
 			for (int i = 0; i < count; i++)
 			{
-				player.gameObject.GetComponent<RagdollManager>().SpawnRagdoll(player.gameObject.transform.position + Vector3.up * 5,
+				player.GameObject.GetComponent<RagdollManager>().SpawnRagdoll(player.Position + Vector3.up * 5,
 					Quaternion.identity, Vector3.zero, role,
-					new PlayerStats.HitInfo(1000f, player.characterClassManager.UserId, DamageTypes.Falldown,
-						player.queryProcessor.PlayerId), false, "SCP-343", "SCP-343", 0);
+					new PlayerStats.HitInfo(1000f, player.UserId, DamageTypes.Falldown,
+						player.Id), false, "SCP-343", "SCP-343", 0);
 				yield return Timing.WaitForSeconds(0.15f);
 			}
 		}
@@ -1513,19 +1505,23 @@ namespace AdminTools
 			PlayerManager.localPlayer.GetComponent<Inventory>().SetPickup(type, -4.656647E+11f, pos, Quaternion.Euler(rot), 0, 0, 0);
 		}
 
-		private IEnumerator<float> DoTut(ReferenceHub rh)
+		private IEnumerator<float> DoTut(Player player)
 		{
-			if (rh.serverRoles.OverwatchEnabled)
-				rh.serverRoles.OverwatchEnabled = false;
+			if (player.IsOverwatchEnabled)
+				player.IsOverwatchEnabled = false;
 
-			rh.characterClassManager.SetPlayersClass(RoleType.Tutorial, rh.gameObject, true);
+			player.Role = RoleType.Tutorial;
 			yield return Timing.WaitForSeconds(1f);
 			Door[] d = UnityEngine.Object.FindObjectsOfType<Door>();
 			foreach (Door door in d)
 				if (door.DoorName == "SURFACE_GATE")
-					rh.playerMovementSync.OverridePosition(door.transform.position + Vector3.up * 2, 0f);
-			rh.serverRoles.CallTargetSetNoclipReady(rh.characterClassManager.connectionToClient, true);
-			rh.serverRoles.NoclipReady = true;
+				{
+					player.Position = door.transform.position + Vector3.up * 2;
+					break;
+				}
+
+			player.ReferenceHub.serverRoles.CallTargetSetNoclipReady(player.ReferenceHub.characterClassManager.connectionToClient, true);
+			player.ReferenceHub.serverRoles.NoclipReady = true;
 		}
 
 
@@ -1591,79 +1587,77 @@ namespace AdminTools
 			}
 		}
 
-		public IEnumerator<float> DoRocket(ReferenceHub hub, float speed)
+		public IEnumerator<float> DoRocket(Player player, float speed)
 		{
 			const int maxAmnt = 50;
 			int amnt = 0;
-			while (hub.characterClassManager.CurClass != RoleType.Spectator)
+			while (player.Role != RoleType.Spectator)
 			{
-				hub.playerMovementSync.OverridePosition(hub.gameObject.transform.position + Vector3.up * speed, 0f, false);
+				player.Position = player.Position + Vector3.up * speed;
 				amnt++;
 				if (amnt >= maxAmnt)
 				{
-					hub.characterClassManager.GodMode = false;
-					hub.playerStats.HurtPlayer(new PlayerStats.HitInfo(1000000, "WORLD", DamageTypes.Grenade, 0),
-						hub.gameObject);
+					player.IsGodModeEnabled = false;
+					player.ReferenceHub.playerStats.HurtPlayer(new PlayerStats.HitInfo(1000000, "WORLD", DamageTypes.Grenade, 0),
+						player.GameObject);
 				}
 
 				yield return Timing.WaitForOneFrame;
 			}
 		}
 
-		public IEnumerator<float> DoJail(ReferenceHub rh, bool skipadd = false)
+		public IEnumerator<float> DoJail(Player player, bool skipadd = false)
 		{
 			List<ItemType> items = new List<ItemType>();
-			foreach (Inventory.SyncItemInfo item in rh.inventory.items)
+			foreach (Inventory.SyncItemInfo item in player.Inventory.items)
 				items.Add(item.id);
 			if (!skipadd)
 				plugin.JailedPlayers.Add(new Jailed
 				{
-					Health = rh.playerStats.Health,
-					Position = rh.gameObject.transform.position,
+					Health = player.Health,
+					Position = player.Position,
 					Items = items,
-					Name = rh.characterClassManager.name,
-					Role = rh.characterClassManager.CurClass,
-					Userid = rh.characterClassManager.UserId,
+					Name = player.Nickname,
+					Role = player.Role,
+					Userid = player.UserId,
 				});
-			if (rh.serverRoles.OverwatchEnabled)
-				rh.serverRoles.OverwatchEnabled = false;
+			if (player.IsOverwatchEnabled)
+				player.IsOverwatchEnabled = false;
 			yield return Timing.WaitForSeconds(1f);
-			rh.characterClassManager.SetClassID(RoleType.Tutorial);
-			rh.gameObject.transform.position = new Vector3(53f, 1020f, -44f);
-			rh.inventory.items.Clear();
+			player.Role = RoleType.Tutorial;
+			player.Position = new Vector3(53f, 1020f, -44f);
+			player.Inventory.items.Clear();
 		}
 
-		private IEnumerator<float> DoUnJail(ReferenceHub rh)
+		private IEnumerator<float> DoUnJail(Player player)
 		{
-			Jailed jail = plugin.JailedPlayers.Find(j => j.Userid == rh.characterClassManager.UserId);
-			rh.characterClassManager.SetClassID(jail.Role);
+			Jailed jail = plugin.JailedPlayers.Find(j => j.Userid == player.UserId);
+			player.Role = jail.Role;
 			foreach (ItemType item in jail.Items)
-				rh.inventory.AddNewItem(item);
+				player.Inventory.AddNewItem(item);
 			yield return Timing.WaitForSeconds(1.5f);
-			rh.playerStats.Health = jail.Health;
-			rh.playerMovementSync.OverridePosition(jail.Position, 0f);
-			rh.gameObject.transform.position = jail.Position;
+			player.Health = jail.Health;
+			player.Position = jail.Position;
 			plugin.JailedPlayers.Remove(jail);
 		}
 
-		public void OnPlayerJoin(PlayerJoinEvent ev)
+		public void OnPlayerJoin(JoinedEventArgs ev)
 		{
 			try
 			{
-				if (plugin.JailedPlayers.Any(j => j.Userid == ev.Player.characterClassManager.UserId))
+				if (plugin.JailedPlayers.Any(j => j.Userid == ev.Player.UserId))
 					Timing.RunCoroutine(DoJail(ev.Player, true));
 
-				if (File.ReadAllText(plugin.OverwatchFilePath).Contains(ev.Player.characterClassManager.UserId))
+				if (File.ReadAllText(plugin.OverwatchFilePath).Contains(ev.Player.UserId))
 				{
-					Log.Debug($"Putting {ev.Player.characterClassManager.UserId} into overwatch.");
-					ev.Player.serverRoles.OverwatchEnabled = true;
+					Log.Debug($"Putting {ev.Player.UserId} into overwatch.");
+					ev.Player.IsOverwatchEnabled = true;
 				}
 
-				if (File.ReadAllText(plugin.HiddenTagsFilePath).Contains(ev.Player.characterClassManager.UserId))
+				if (File.ReadAllText(plugin.HiddenTagsFilePath).Contains(ev.Player.UserId))
 				{
-					Log.Debug($"Hiding {ev.Player.characterClassManager.UserId}'s tag.");
-					ev.Player.serverRoles._hideLocalBadge = true;
-					ev.Player.serverRoles.RefreshHiddenTag();
+					Log.Debug($"Hiding {ev.Player.UserId}'s tag.");
+					ev.Player.HideTag();
 				}
 			}
 			catch (Exception e)
@@ -1672,25 +1666,25 @@ namespace AdminTools
 			}
 		}
 
-		public void OnRoundEnd()
+		public void OnRoundEnd(RoundEndedEventArgs ev)
 		{
 			try
 			{
 				List<string> overwatchRead = File.ReadAllLines(plugin.OverwatchFilePath).ToList();
 				List<string> tagsRead = File.ReadAllLines(plugin.HiddenTagsFilePath).ToList();
 
-				foreach (ReferenceHub hub in Player.GetHubs())
+				foreach (Player player in Player.List)
 				{
-					string userId = hub.characterClassManager.UserId;
+					string userId = player.UserId;
 
-					if (hub.serverRoles.OverwatchEnabled && !overwatchRead.Contains(userId))
+					if (player.IsOverwatchEnabled && !overwatchRead.Contains(userId))
 						overwatchRead.Add(userId);
-					else if (!hub.serverRoles.OverwatchEnabled && overwatchRead.Contains(userId))
+					else if (!player.IsOverwatchEnabled && overwatchRead.Contains(userId))
 						overwatchRead.Remove(userId);
 
-					if (hub.serverRoles._hideLocalBadge && !tagsRead.Contains(userId))
+					if (player.ReferenceHub.serverRoles._hideLocalBadge && !tagsRead.Contains(userId))
 						tagsRead.Add(userId);
-					else if (!hub.serverRoles._hideLocalBadge && tagsRead.Contains(userId))
+					else if (!player.ReferenceHub.serverRoles._hideLocalBadge && tagsRead.Contains(userId))
 						tagsRead.Remove(userId);
 				}
 
@@ -1707,16 +1701,16 @@ namespace AdminTools
 			}
 		}
 
-		public void OnTriggerTesla(ref TriggerTeslaEvent ev)
+		public void OnTriggerTesla(TriggeringTeslaEventArgs ev)
 		{
-			if (ev.Player.characterClassManager.GodMode)
-				ev.Triggerable = false;
+			if (ev.Player.IsGodModeEnabled)
+				ev.IsTriggerable = false;
 		}
 
-		public void OnSetClass(SetClassEvent ev)
+		public void OnSetClass(ChangingRoleEventArgs ev)
 		{
 			if (plugin.GodTuts)
-				ev.Player.characterClassManager.GodMode = ev.Role == RoleType.Tutorial;
+				ev.Player.IsGodModeEnabled = ev.NewRole == RoleType.Tutorial;
 		}
 
 		public void OnWaitingForPlayers()
