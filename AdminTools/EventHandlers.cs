@@ -773,7 +773,8 @@ namespace AdminTools
 					case "dummy":
 						{
 							ev.Allow = false;
-							if (!sender.CheckPermission("at.dummy"))
+							ev.Sender.RAMessage("The \"dummy\" command has been disabled for the time being due to some problems");
+							/*if (!sender.CheckPermission("at.dummy"))
 							{
 								ev.Sender.RAMessage("Permission denied.");
 								return;
@@ -797,7 +798,7 @@ namespace AdminTools
 								ReferenceHub rh = Player.GetPlayer(args[1]);
 								if (rh == null)
 								{
-									ev.Sender.RAMessage("Player not found.", false);
+									ev.Sender.RAMessage("Player not found.");
 									return;
 								}
 								hubs.Add(rh);
@@ -842,7 +843,7 @@ namespace AdminTools
 									z);
 							}
 
-							ev.Sender.RAMessage("Dummy(s) spawned.");
+							ev.Sender.RAMessage("Dummy(s) spawned.");*/
 							break;
 						}
 					case "ragdoll":
@@ -993,9 +994,9 @@ namespace AdminTools
 								return;
 							}
 
-							if (args.Length < 3)
+							if (args.Length < 4)
 							{
-								ev.Sender.RAMessage($"Too few arguments. Value: {args.Length}, Expected 3");
+								ev.Sender.RAMessage($"Too few arguments. Value: {args.Length}, Expected 4");
 								return;
 							}
 
@@ -1011,7 +1012,7 @@ namespace AdminTools
 								ReferenceHub rh = Player.GetPlayer(args[1]);
 								if (rh == null)
 								{
-									ev.Sender.RAMessage("Player not found.", false);
+									ev.Sender.RAMessage("Player not found.");
 									return;
 								}
 								hubs.Add(rh);
@@ -1022,32 +1023,24 @@ namespace AdminTools
 								case "frag":
 									foreach (ReferenceHub hub in hubs)
 									{
-										GrenadeManager gm = hub.GetComponent<GrenadeManager>();
-										GrenadeSettings grenade = gm.availableGrenades.FirstOrDefault(g => g.inventoryID == ItemType.GrenadeFrag);
-										if (grenade == null)
+										if (!float.TryParse(args[3], out float timer))
 										{
-											ev.Sender.RAMessage($"Something broke that really really <b>really</b> shouldn't have.. Notify Joker with the following error code: GS-NRE", false);
+											ev.Sender.RAMessage($"Invalid value for timer: {args[3]}");
 											return;
 										}
-										Grenade component = Object.Instantiate(grenade.grenadeInstance).GetComponent<Grenade>();
-										component.InitData(gm, Vector3.zero, Vector3.zero, 0f);
-										NetworkServer.Spawn(component.gameObject);
+										SpawnGrenadeOnPlayer(hub, 0, timer);
 									}
 									ev.Sender.RAMessage("Tick, tick.. BOOM!");
 									break;
 								case "flash":
 									foreach (ReferenceHub hub in hubs)
 									{
-										GrenadeManager gm = hub.GetComponent<GrenadeManager>();
-										GrenadeSettings grenade = gm.availableGrenades.FirstOrDefault(g => g.inventoryID == ItemType.GrenadeFlash);
-										if (grenade == null)
+										if (!float.TryParse(args[3], out float timer))
 										{
-											ev.Sender.RAMessage($"Something broke that really really <b>really</b> shouldn't have.. Notify Joker with the following error code: GS-NRE", false);
+											ev.Sender.RAMessage($"Invalid value for timer: {args[3]}");
 											return;
 										}
-										Grenade component = Object.Instantiate(grenade.grenadeInstance).GetComponent<Grenade>();
-										component.InitData(gm, Vector3.zero, Vector3.zero, 0f);
-										NetworkServer.Spawn(component.gameObject);
+										SpawnGrenadeOnPlayer(hub, 1, timer);
 									}
 									ev.Sender.RAMessage("Don't look at the light!");
 									break;
@@ -1505,6 +1498,42 @@ namespace AdminTools
 							ev.Sender.RAMessage($"Cleared all items in {player.nicknameSync.MyNick}'s inventory");
 						}
 						break;
+					case "explode":
+						ev.Allow = false;
+						if (!sender.CheckPermission("at.explode"))
+						{
+							ev.Sender.RAMessage("Permission denied.");
+							return;
+						}
+
+						if (args.Length < 2)
+						{
+							ev.Sender.RAMessage("Please provide an explode command and an id");
+							return;
+						}
+
+						switch (args[1].ToLower())
+						{
+							case "*":
+							case "all":
+								foreach (ReferenceHub hub in Player.GetHubs())
+								{
+									SpawnGrenadeOnPlayer(hub, 0, 0.01f);
+								}
+								ev.Sender.RAMessage("You exploded everyone, Hubert Moszka cannot believe you've done this");
+								break;
+							default:
+								ReferenceHub player = Player.GetPlayer(args[1]);
+								if (player == null)
+								{
+									ev.Sender.RAMessage($"Player {args[1]} not found.");
+									return;
+								}
+								SpawnGrenadeOnPlayer(player, 0, 0.01f);
+								ev.Sender.RAMessage($"You exploded {player.nicknameSync.MyNick}");
+								break;
+						}
+						break;
 				}
 			}
 			catch (Exception e)
@@ -1520,9 +1549,11 @@ namespace AdminTools
 					NetworkManager.singleton.spawnPrefabs.FirstOrDefault(p => p.gameObject.name == "Player"));
 			CharacterClassManager ccm = obj.GetComponent<CharacterClassManager>();
 			if (ccm == null)
-				Log.Error("CCM is null, doufus. You need to do this the harder way.");
-			ccm.CurClass = role;
-			ccm.RefreshPlyModel();
+			{
+				Log.Info("CCM is null, doufus. You need to do this the harder way.");
+				return;
+			}
+			ccm.RefreshPlyModel(role);
 			obj.GetComponent<NicknameSync>().Network_myNickSync = "Dummy";
 			obj.GetComponent<QueryProcessor>().PlayerId = 9999;
 			obj.GetComponent<QueryProcessor>().NetworkPlayerId = 9999;
@@ -1783,6 +1814,15 @@ namespace AdminTools
 		{
 			ik_hubs.Clear();
 			bd_hubs.Clear();
+		}
+
+		public static void SpawnGrenadeOnPlayer(ReferenceHub ply, int grenadeType, float timer)
+		{
+			GrenadeManager gm = ply.gameObject.GetComponent<GrenadeManager>();
+			Grenade gnade = UnityEngine.Object.Instantiate(gm.availableGrenades[grenadeType].grenadeInstance.GetComponent<Grenade>());
+			gnade.fuseDuration = timer;
+			gnade.FullInitData(gm, ply.GetPosition(), Quaternion.Euler(gnade.throwStartAngle), gnade.throwLinearVelocityOffset, gnade.throwAngularVelocity);
+			NetworkServer.Spawn(gnade.gameObject);
 		}
 	}
 }
