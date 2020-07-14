@@ -1,5 +1,5 @@
 ﻿using Exiled.API.Features;
-using Exiled.Events.Handlers.EventArgs;
+using Exiled.Events.EventArgs;
 using UnityEngine;
 using Handlers = Exiled.Events.Handlers;
 

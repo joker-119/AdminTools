@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Exiled.API.Extensions;
 using Exiled.API.Features;
 using Exiled.API.Interfaces;
 using Exiled.Events;
@@ -8,19 +9,20 @@ using Handlers = Exiled.Events.Handlers;
 
 namespace AdminTools
 {
-	public class Plugin : Exiled.API.Features.Plugin
+	public class Plugin : Exiled.API.Features.Plugin<Config>
 	{
+		public override string Author { get; } = "Galaxy119";
+		public override string Name { get; } = "Admin Tools";
+		public override string Prefix { get; } = "AT";
+		public override Version Version { get; } = new Version(1, 4, 0);
+		public override Version RequiredExiledVersion { get; } = new Version(2, 0, 0);
 		public EventHandlers EventHandlers;
 		public List<Jailed> JailedPlayers = new List<Jailed>();
 		public static Dictionary<Player, InstantKillComponent> IkHubs = new Dictionary<Player, InstantKillComponent>();
 		public static Dictionary<Player, BreakDoorComponent> BdHubs = new Dictionary<Player, BreakDoorComponent>();
 		public string OverwatchFilePath;
 		public string HiddenTagsFilePath;
-		public bool GodTuts;
-		public static bool Scp049Speak;
-		public static int PatchCounter;
-		public Config Cfg;
-		
+
 		public override void OnEnabled()
 		{
 			try
@@ -30,9 +32,6 @@ namespace AdminTools
 				string path = Path.Combine(pluginPath, "AdminTools");
 				string overwatchFileName = Path.Combine(path, "AdminTools-Overwatch.txt");
 				string hiddenTagFileName = Path.Combine(path, "AdminTools-HiddenTags.txt");
-
-				Cfg = (Config) Config;
-				Cfg.Reload();
 
 				if (!Directory.Exists(path))
 					Directory.CreateDirectory(path);
@@ -75,7 +74,5 @@ namespace AdminTools
 		{
 			
 		}
-
-		public override IConfig Config { get; }
 	}
 }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Exiled.API.Features;
-using Exiled.Events.Handlers.EventArgs;
+using Exiled.Events.EventArgs;
 using Exiled.Permissions.Extensions;
 using GameCore;
 using Grenades;
@@ -1117,7 +1117,7 @@ namespace AdminTools
 								foreach (Player player in Player.List)
 									if (player.Role != RoleType.Spectator)
 										players.Add(player);
-								PlayerManager.localPlayer.GetComponent<MTFRespawn>().RpcPlayCustomAnnouncement("pitch_1.5 xmas_bouncyballs", true, false);
+								Cassie.Message("pitch_1.5 xmas_bouncyballs", true, false);
 							}
 							else
 							{
@@ -1371,7 +1371,8 @@ namespace AdminTools
 												foreach (Player player in Player.List)
 													if (!player.ReferenceHub.TryGetComponent(out BreakDoorComponent bdComponent))
 													{
-														player.GameObject.AddComponent<BreakDoorComponent>();
+														bdComponent = player.GameObject.AddComponent<BreakDoorComponent>();
+														Plugin.BdHubs.Add(player, bdComponent);
 													}
 													else
 													{
@@ -1393,6 +1394,7 @@ namespace AdminTools
 											{
 												ev.ReplyMessage = ($"Instant breaking of doors is on for {ply.Nickname}");
 												doorBreak = ply.GameObject.AddComponent<BreakDoorComponent>();
+												Plugin.BdHubs.Add(ply, doorBreak);
 												doorBreak.breakAll = false;
 											}
 											else
@@ -1406,6 +1408,7 @@ namespace AdminTools
 
 												ev.ReplyMessage = ($"Instant breaking of doors is off for {ply.Nickname}");
 												UnityEngine.Object.Destroy(doorBreak);
+												Plugin.BdHubs.Remove(ply);
 											}
 											break;
 										case "all":
@@ -1414,8 +1417,9 @@ namespace AdminTools
 												foreach (Player player in Player.List)
 													if (!player.ReferenceHub.TryGetComponent(out BreakDoorComponent bdComponent))
 													{
-														BreakDoorComponent doorBreakerAll = player.GameObject.AddComponent<BreakDoorComponent>();
-														doorBreakerAll.breakAll = true;
+														bdComponent = player.GameObject.AddComponent<BreakDoorComponent>();
+														bdComponent.breakAll = true;
+														Plugin.BdHubs.Add(player, bdComponent);
 													}
 													else
 													{
@@ -1438,6 +1442,7 @@ namespace AdminTools
 												ev.ReplyMessage = ($"Instant breaking of everything is on for {ply.Nickname}");
 												doorBreak = ply.GameObject.AddComponent<BreakDoorComponent>();
 												doorBreak.breakAll = true;
+												Plugin.BdHubs.Add(ply, doorBreak);
 											}
 											else
 											{
@@ -1449,6 +1454,7 @@ namespace AdminTools
 												}
 												ev.ReplyMessage = ($"Instant breaking of everything is off for {ply.Nickname}");
 												UnityEngine.Object.Destroy(doorBreaker);
+												Plugin.BdHubs.Remove(ply);
 											}
 											break;
 										default:
@@ -1752,7 +1758,7 @@ namespace AdminTools
 
 		public void OnSetClass(ChangingRoleEventArgs ev)
 		{
-			if (plugin.GodTuts)
+			if (plugin.Config.GodTuts)
 				ev.Player.IsGodModeEnabled = ev.NewRole == RoleType.Tutorial;
 		}
 
