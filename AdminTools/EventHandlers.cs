@@ -40,14 +40,11 @@ namespace AdminTools
 					$"{DateTime.Now}: {ev.Sender.Nickname} ({ev.Sender.Id}) executed: {ev.Name} {Environment.NewLine}";
 				File.AppendAllText(fileName, data);
 
-				string effort = $"{ev.Name} ";
-				foreach (string s in ev.Arguments)
-					effort += $"{s} ";
+				string[] args = ev.Arguments.ToArray();
 				
-				string[] args = effort.Split(' ');
 				Player sender = ev.Sender;
 
-				switch (args[0].ToLower())
+				switch (ev.Name)
 				{
 					case "kick":
 						{
