@@ -40,8 +40,11 @@ namespace AdminTools
 					$"{DateTime.Now}: {ev.Sender.Nickname} ({ev.Sender.Id}) executed: {ev.Name} {Environment.NewLine}";
 				File.AppendAllText(fileName, data);
 
-				string[] args = ev.Arguments.ToArray();
-				
+				string effort = ev.Name;
+				foreach (string s in ev.Arguments)
+					effort += $" {s}";
+				string[] args = effort.Split(' ');
+
 				Player sender = ev.Sender;
 
 				switch (ev.Name)
@@ -369,7 +372,7 @@ namespace AdminTools
 							}
 
 							for (int i = 0; i < result; i++)
-								SpawnItem(item, player.Position, Vector3.zero);
+								SpawnItem(item, player.Position);
 							ev.ReplyMessage = ("Done. hehexd");
 							return;
 						}
@@ -771,8 +774,7 @@ namespace AdminTools
 
 							foreach (Player player in players)
 							{
-								Pickup yesnt = player.Inventory.SetPickup(item, -4.656647E+11f, player.Position,
-									Quaternion.identity, 0, 0, 0);
+								Pickup yesnt = Exiled.API.Extensions.Item.Spawn(item, 0, player.Position);
 
 								GameObject gameObject = yesnt.gameObject;
 								gameObject.transform.localScale = Vector3.one * size;
@@ -1546,9 +1548,9 @@ namespace AdminTools
 			bench.AddComponent<WorkStationUpgrader>();
 		}
 
-		public void SpawnItem(ItemType type, Vector3 pos, Vector3 rot)
+		public void SpawnItem(ItemType type, Vector3 pos)
 		{
-			PlayerManager.localPlayer.GetComponent<Inventory>().SetPickup(type, -4.656647E+11f, pos, Quaternion.Euler(rot), 0, 0, 0);
+			Exiled.API.Extensions.Item.Spawn(type, 0, pos);
 		}
 
 		private IEnumerator<float> DoTut(Player player)
@@ -1672,7 +1674,7 @@ namespace AdminTools
 			yield return Timing.WaitForSeconds(1f);
 			player.Role = RoleType.Tutorial;
 			player.Position = new Vector3(53f, 1020f, -44f);
-			player.Inventory.items.Clear();
+			player.ResetInventory(new List<Inventory.SyncItemInfo>());
 		}
 
 		private IEnumerator<float> DoUnJail(Player player)
