@@ -1510,7 +1510,7 @@ namespace AdminTools
 			if (ccm == null)
 				Log.Error("CCM is null, doufus. You need to do this the harder way.");
 			ccm.CurClass = role;
-			ccm.RefreshPlyModel();
+			//ccm.RefreshPlyModel(); Removing this works lol
 			obj.GetComponent<NicknameSync>().Network_myNickSync = "Dummy";
 			obj.GetComponent<QueryProcessor>().PlayerId = 9999;
 			obj.GetComponent<QueryProcessor>().NetworkPlayerId = 9999;
@@ -1681,6 +1681,7 @@ namespace AdminTools
 		{
 			Jailed jail = plugin.JailedPlayers.Find(j => j.Userid == player.UserId);
 			player.Role = jail.Role;
+			player.ClearInventory();
 			foreach (ItemType item in jail.Items)
 				player.Inventory.AddNewItem(item);
 			yield return Timing.WaitForSeconds(1.5f);
