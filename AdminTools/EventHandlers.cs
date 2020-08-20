@@ -1510,7 +1510,6 @@ namespace AdminTools
 			if (ccm == null)
 				Log.Error("CCM is null, doufus. You need to do this the harder way.");
 			ccm.CurClass = role;
-			ccm.RefreshPlyModel();
 			obj.GetComponent<NicknameSync>().Network_myNickSync = "Dummy";
 			obj.GetComponent<QueryProcessor>().PlayerId = 9999;
 			obj.GetComponent<QueryProcessor>().NetworkPlayerId = 9999;
@@ -1656,15 +1655,15 @@ namespace AdminTools
 
 		public IEnumerator<float> DoJail(Player player, bool skipadd = false)
 		{
-			List<ItemType> items = new List<ItemType>();
+			List<Inventory.SyncItemInfo> items = new List<Inventory.SyncItemInfo>();
 			foreach (Inventory.SyncItemInfo item in player.Inventory.items)
-				items.Add(item.id);
+				items.Add(item);
 			if (!skipadd)
 				plugin.JailedPlayers.Add(new Jailed
 				{
 					Health = player.Health,
 					Position = player.Position,
-					Items = items,
+					Items =  items,
 					Name = player.Nickname,
 					Role = player.Role,
 					Userid = player.UserId,
@@ -1681,8 +1680,7 @@ namespace AdminTools
 		{
 			Jailed jail = plugin.JailedPlayers.Find(j => j.Userid == player.UserId);
 			player.Role = jail.Role;
-			foreach (ItemType item in jail.Items)
-				player.Inventory.AddNewItem(item);
+			player.ResetInventory(jail.Items);
 			yield return Timing.WaitForSeconds(1.5f);
 			player.Health = jail.Health;
 			player.Position = jail.Position;
