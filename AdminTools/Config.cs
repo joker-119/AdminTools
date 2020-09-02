@@ -5,7 +5,7 @@ namespace AdminTools
 {
     public class Config : IConfig
     {
-        public bool GodTuts { get; set; }
-        public bool IsEnabled { get; set; }
+        public bool GodTuts { get; set; } = true;
+        public bool IsEnabled { get; set; } = true;
     }
 }
