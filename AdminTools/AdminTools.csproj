@@ -37,23 +37,34 @@
     <Reference Include="0Harmony">
       <HintPath>..\..\..\..\EXILED\Plugins-PTB\dependencies\0Harmony.dll</HintPath>
     </Reference>
-    <Reference Include="Assembly-CSharp">
-      <HintPath>..\..\..\..\..\..\..\Assembly-CSharp.dll</HintPath>
+    <Reference Include="Assembly-CSharp-firstpass, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\SCPSL_OFFICIAL_20_SERVER\SCPSL_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
     </Reference>
-    <Reference Include="Assembly-CSharp-firstpass">
-      <HintPath>..\..\..\..\..\..\Assembly-CSharp-firstpass.dll</HintPath>
+    <Reference Include="Assembly-CSharp_publicized, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\SCPSL_OFFICIAL_20_SERVER\SCPSL_Data\Managed\publicized_assemblies\Assembly-CSharp_publicized.dll</HintPath>
     </Reference>
-    <Reference Include="Assembly-CSharp_publicized">
-      <HintPath>..\..\..\..\..\..\..\Assembly-CSharp_publicized.dll</HintPath>
+    <Reference Include="CommandSystem.Core">
+      <HintPath>..\..\..\SCPSL_OFFICIAL_20_SERVER\SCPSL_Data\Managed\CommandSystem.Core.dll</HintPath>
     </Reference>
-    <Reference Include="EXILED">
-      <HintPath>..\..\..\..\..\..\..\EXILED.dll</HintPath>
+    <Reference Include="Exiled.API, Version=2.1.2.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\EXILED.2.1.2\lib\net472\Exiled.API.dll</HintPath>
     </Reference>
-    <Reference Include="EXILED_Events">
-      <HintPath>..\..\..\..\..\..\..\EXILED_Events.dll</HintPath>
+    <Reference Include="Exiled.Bootstrap, Version=2.1.2.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\EXILED.2.1.2\lib\net472\Exiled.Bootstrap.dll</HintPath>
     </Reference>
-    <Reference Include="EXILED_Permissions">
-      <HintPath>..\..\..\..\..\..\..\EXILED_Permissions.dll</HintPath>
+    <Reference Include="Exiled.Events, Version=2.1.2.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\EXILED.2.1.2\lib\net472\Exiled.Events.dll</HintPath>
+    </Reference>
+    <Reference Include="Exiled.Loader, Version=2.1.2.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\EXILED.2.1.2\lib\net472\Exiled.Loader.dll</HintPath>
+    </Reference>
+    <Reference Include="Exiled.Permissions, Version=2.1.2.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\EXILED.2.1.2\lib\net472\Exiled.Permissions.dll</HintPath>
+    </Reference>
+    <Reference Include="Exiled.Updater, Version=3.0.2.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\EXILED.2.1.2\lib\net472\Exiled.Updater.dll</HintPath>
     </Reference>
     <Reference Include="Mirror">
       <HintPath>..\..\..\..\SCPSL_Data\Managed\Mirror.dll</HintPath>
@@ -70,14 +81,111 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BreakDoorComponent.cs" />
+    <Compile Include="Commands\Ball\All.cs" />
+    <Compile Include="Commands\Ball\Ball.cs" />
+    <Compile Include="Commands\Ball\User.cs" />
+    <Compile Include="Commands\BreakDoors\All.cs" />
+    <Compile Include="Commands\BreakDoors\BreakDoors.cs" />
+    <Compile Include="Commands\BreakDoors\Clear.cs" />
+    <Compile Include="Commands\BreakDoors\Give.cs" />
+    <Compile Include="Commands\BreakDoors\List.cs" />
+    <Compile Include="Commands\BreakDoors\Remove.cs" />
+    <Compile Include="Commands\Configuration\Configuration.cs" />
+    <Compile Include="Commands\Configuration\Reload.cs" />
+    <Compile Include="Commands\DropItem\All.cs" />
+    <Compile Include="Commands\DropItem\DropItem.cs" />
+    <Compile Include="Commands\DropItem\User.cs" />
+    <Compile Include="Commands\DropSize\All.cs" />
+    <Compile Include="Commands\DropSize\DropSize.cs" />
+    <Compile Include="Commands\DropSize\User.cs" />
+    <Compile Include="Commands\Dummy\All.cs" />
+    <Compile Include="Commands\Dummy\Dummy.cs" />
+    <Compile Include="Commands\Dummy\User.cs" />
+    <Compile Include="Commands\Ghost\All.cs" />
+    <Compile Include="Commands\Ghost\Clear.cs" />
+    <Compile Include="Commands\Ghost\Ghost.cs" />
+    <Compile Include="Commands\Ghost\User.cs" />
+    <Compile Include="Commands\Grenade\All.cs" />
+    <Compile Include="Commands\Grenade\Grenade.cs" />
+    <Compile Include="Commands\Grenade\User.cs" />
+    <Compile Include="Commands\Hp\All.cs" />
+    <Compile Include="Commands\Hp\Hp.cs" />
+    <Compile Include="Commands\Hp\User.cs" />
+    <Compile Include="Commands\Jail\Jail.cs" />
+    <Compile Include="Commands\Position\All.cs" />
+    <Compile Include="Commands\Position\Position.cs" />
+    <Compile Include="Commands\Position\User.cs" />
+    <Compile Include="Commands\SendMessage\Staff.cs" />
+    <Compile Include="Commands\SpawnRagdoll\All.cs" />
+    <Compile Include="Commands\SpawnRagdoll\SpawnRagdoll.cs" />
+    <Compile Include="Commands\SpawnRagdoll\User.cs" />
+    <Compile Include="Commands\Scale\All.cs" />
+    <Compile Include="Commands\Scale\Reset.cs" />
+    <Compile Include="Commands\Scale\Scale.cs" />
+    <Compile Include="Commands\Scale\User.cs" />
+    <Compile Include="Commands\SendMessage\SendMessage.cs" />
+    <Compile Include="Commands\SendMessage\Group.cs" />
+    <Compile Include="Commands\SendMessage\User.cs" />
+    <Compile Include="Commands\Cleanup\Cleanup.cs" />
+    <Compile Include="Commands\Cleanup\Items.cs" />
+    <Compile Include="Commands\Cleanup\Ragdolls.cs" />
+    <Compile Include="Commands\Size\All.cs" />
+    <Compile Include="Commands\Size\Reset.cs" />
+    <Compile Include="Commands\Size\Size.cs" />
+    <Compile Include="Commands\Size\User.cs" />
+    <Compile Include="Commands\SpawnWorkbench\All.cs" />
+    <Compile Include="Commands\SpawnWorkbench\Clear.cs" />
+    <Compile Include="Commands\SpawnWorkbench\SpawnWorkbench.cs" />
+    <Compile Include="Commands\SpawnWorkbench\User.cs" />
+    <Compile Include="Commands\Tags\Hide.cs" />
+    <Compile Include="Commands\Tags\Show.cs" />
+    <Compile Include="Commands\Tags\Tags.cs" />
+    <Compile Include="Commands\Id\All.cs" />
+    <Compile Include="Commands\Id\ID.cs" />
+    <Compile Include="Commands\Id\User.cs" />
+    <Compile Include="Commands\InstantKill\All.cs" />
+    <Compile Include="Commands\InstantKill\Clear.cs" />
+    <Compile Include="Commands\InstantKill\Give.cs" />
+    <Compile Include="Commands\InstantKill\InstantKill.cs" />
+    <Compile Include="Commands\InstantKill\List.cs" />
+    <Compile Include="Commands\InstantKill\Remove.cs" />
+    <Compile Include="Commands\Inventory\All.cs" />
+    <Compile Include="Commands\Inventory\Drop.cs" />
+    <Compile Include="Commands\Inventory\Inventory.cs" />
+    <Compile Include="Commands\Inventory\See.cs" />
+    <Compile Include="Commands\Inventory\User.cs" />
+    <Compile Include="Commands\Kill\All.cs" />
+    <Compile Include="Commands\Kill\Kill.cs" />
+    <Compile Include="Commands\Kill\User.cs" />
+    <Compile Include="Commands\Mute\All.cs" />
+    <Compile Include="Commands\Mute\ICom.cs" />
+    <Compile Include="Commands\Mute\Mute.cs" />
+    <Compile Include="Commands\Rocket\All.cs" />
+    <Compile Include="Commands\Rocket\User.cs" />
+    <Compile Include="Commands\Rocket\Rocket.cs" />
+    <Compile Include="Commands\Strip\All.cs" />
+    <Compile Include="Commands\Strip\User.cs" />
+    <Compile Include="Commands\Strip\Strip.cs" />
+    <Compile Include="Commands\TeleportX\All.cs" />
+    <Compile Include="Commands\TeleportX\TeleportX.cs" />
+    <Compile Include="Commands\TeleportX\User.cs" />
+    <Compile Include="Commands\Tutorial\Tutorial.cs" />
+    <Compile Include="Commands\Unmute\All.cs" />
+    <Compile Include="Commands\Unmute\ICom.cs" />
+    <Compile Include="Commands\Unmute\Unmute.cs" />
+    <Compile Include="Components\BreakDoorComponent.cs" />
+    <Compile Include="Commands\Kick\Kick.cs" />
+    <Compile Include="Config.cs" />
+    <Compile Include="Enums.cs" />
     <Compile Include="EventHandlers.cs" />
     <Compile Include="Extensions.cs" />
-    <Compile Include="InstantKillComponent.cs" />
+    <Compile Include="Components\InstantKillComponent.cs" />
     <Compile Include="Jailed.cs" />
-    <Compile Include="Patches\Scp049HumanSpeech.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

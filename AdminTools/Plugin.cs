@@ -1,32 +1,34 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using EXILED;
-using Harmony;
+using Exiled.API.Features;
+using Handlers = Exiled.Events.Handlers;
 
 namespace AdminTools
 {
-	public class Plugin : EXILED.Plugin
+	public class Plugin : Exiled.API.Features.Plugin<Config>
 	{
+		public override string Author { get; } = "Galaxy119";
+		public override string Name { get; } = "Admin Tools";
+		public override string Prefix { get; } = "AT";
+		public override Version Version { get; } = new Version(2, 0, 0);
+		public override Version RequiredExiledVersion { get; } = new Version(2, 1, 2);
 		public EventHandlers EventHandlers;
-		public List<Jailed> JailedPlayers = new List<Jailed>();
+		public static List<Jailed> JailedPlayers = new List<Jailed>();
+		public static Dictionary<Player, InstantKillComponent> IkHubs = new Dictionary<Player, InstantKillComponent>();
+		public static Dictionary<Player, BreakDoorComponent> BdHubs = new Dictionary<Player, BreakDoorComponent>();
 		public string OverwatchFilePath;
 		public string HiddenTagsFilePath;
-		public bool GodTuts;
-		public static bool Scp049Speak;
-		public static int PatchCounter;
-		
-		public override void OnEnable()
+
+		public override void OnEnabled()
 		{
 			try
 			{
 				string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
 				string pluginPath = Path.Combine(appData, "Plugins");
-				string path = Path.Combine(pluginPath, "AdminTools");
+				string path = Path.Combine(Paths.Plugins, "AdminTools");
 				string overwatchFileName = Path.Combine(path, "AdminTools-Overwatch.txt");
 				string hiddenTagFileName = Path.Combine(path, "AdminTools-HiddenTags.txt");
-
-				ReloadConfigs();
 
 				if (!Directory.Exists(path))
 					Directory.CreateDirectory(path);
@@ -41,15 +43,12 @@ namespace AdminTools
 				HiddenTagsFilePath = hiddenTagFileName;
 
 				EventHandlers = new EventHandlers(this);
-				Events.RemoteAdminCommandEvent += EventHandlers.OnCommand;
-				Events.PlayerJoinEvent += EventHandlers.OnPlayerJoin;
-				Events.RoundEndEvent += EventHandlers.OnRoundEnd;
-				Events.TriggerTeslaEvent += EventHandlers.OnTriggerTesla;
-				Events.SetClassEvent += EventHandlers.OnSetClass;
-				Events.PlayerLeaveEvent += EventHandlers.OnPlayerLeave;
-				Events.RoundStartEvent += EventHandlers.OnRoundStart;
-				HarmonyInstance instance = HarmonyInstance.Create($"com.joker.admintools.{PatchCounter}");
-				instance.PatchAll();
+				Handlers.Server.SendingRemoteAdminCommand += EventHandlers.OnCommand;
+				Handlers.Player.Joined += EventHandlers.OnPlayerJoin;
+				Handlers.Server.RoundEnded += EventHandlers.OnRoundEnd;
+				Handlers.Player.TriggeringTesla += EventHandlers.OnTriggerTesla;
+				Handlers.Player.ChangingRole += EventHandlers.OnSetClass;
+				Handlers.Server.WaitingForPlayers += EventHandlers.OnWaitingForPlayers;
 			}
 			catch (Exception e)
 			{
@@ -57,29 +56,17 @@ namespace AdminTools
 			}
 		}
 
-		private void ReloadConfigs()
+		public override void OnDisabled()
 		{
-			GodTuts = Config.GetBool("admin_god_tuts", true);
-			Scp049Speak = Config.GetBool("admin_scp049_speech", true);
-		}
-
-		public override void OnDisable()
-		{
-			Events.RemoteAdminCommandEvent -= EventHandlers.OnCommand;
-			Events.PlayerJoinEvent -= EventHandlers.OnPlayerJoin;
-			Events.RoundEndEvent -= EventHandlers.OnRoundEnd;
-			Events.TriggerTeslaEvent -= EventHandlers.OnTriggerTesla;
-			Events.SetClassEvent -= EventHandlers.OnSetClass;
-			Events.PlayerLeaveEvent -= EventHandlers.OnPlayerLeave;
-			Events.RoundStartEvent -= EventHandlers.OnRoundStart;
+			Handlers.Server.SendingRemoteAdminCommand -= EventHandlers.OnCommand;
+			Handlers.Player.Joined -= EventHandlers.OnPlayerJoin;
+			Handlers.Server.RoundEnded -= EventHandlers.OnRoundEnd;
+			Handlers.Player.TriggeringTesla -= EventHandlers.OnTriggerTesla;
+			Handlers.Player.ChangingRole -= EventHandlers.OnSetClass;
+			Handlers.Server.WaitingForPlayers -= EventHandlers.OnWaitingForPlayers;
 			EventHandlers = null;
 		}
 
-		public override void OnReload()
-		{
-			
-		}
-
-		public override string getName { get; } = "AdminTools";
+		public override void OnReloaded() { }
 	}
 }
