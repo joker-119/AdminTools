@@ -7,7 +7,7 @@ namespace AdminTools
 	{
 		public string Userid;
 		public string Name;
-		public List<ItemType> Items;
+		public List<Inventory.SyncItemInfo> Items;
 		public RoleType Role;
 		public Vector3 Position;
 		public float Health;

@@ -193,9 +193,9 @@ namespace AdminTools
 
 		public static IEnumerator<float> DoJail(Player player, bool skipadd = false)
 		{
-			List<ItemType> items = new List<ItemType>();
+			List<Inventory.SyncItemInfo> items = new List<Inventory.SyncItemInfo>();
 			foreach (Inventory.SyncItemInfo item in player.Inventory.items)
-				items.Add(item.id);
+				items.Add(item);
 			if (!skipadd)
 				Plugin.JailedPlayers.Add(new Jailed
 				{
@@ -218,8 +218,7 @@ namespace AdminTools
 		{
 			Jailed jail = Plugin.JailedPlayers.Find(j => j.Userid == player.UserId);
 			player.Role = jail.Role;
-			foreach (ItemType item in jail.Items)
-				player.Inventory.AddNewItem(item);
+			player.ResetInventory(jail.Items);
 			yield return Timing.WaitForSeconds(1.5f);
 			player.Health = jail.Health;
 			player.Position = jail.Position;
