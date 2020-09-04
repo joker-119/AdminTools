@@ -34,7 +34,7 @@ namespace AdminTools.Commands.SpawnWorkbench
                 return false;
             }
 
-            response = "Invalid subcommand. Available ones: all / *, clear, clearall, user";
+            response = "Invalid subcommand. Available ones: all / *, clear, clearall, count, user";
             return false;
         }
     }
