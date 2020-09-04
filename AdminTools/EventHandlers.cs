@@ -19,7 +19,6 @@ namespace AdminTools
 	{
 		private readonly Plugin plugin;
 		public EventHandlers(Plugin plugin) => this.plugin = plugin;
-		public static List<GameObject> Benches = new List<GameObject>();
 
 		public static void LogCommandUsed(CommandSender sender, string Command)
 		{
@@ -75,8 +74,9 @@ namespace AdminTools
 			}
 		}
 
-		public static void SpawnWorkbench(Vector3 position, Vector3 rotation, Vector3 size)
+		public static void SpawnWorkbench(Player Ply, Vector3 position, Vector3 rotation, Vector3 size, out int BenchIndex)
 		{
+			BenchIndex = 0;
 			GameObject bench =
 				Object.Instantiate(
 					NetworkManager.singleton.spawnPrefabs.Find(p => p.gameObject.name == "Work Station"));
@@ -87,9 +87,19 @@ namespace AdminTools
 			offset.rotation = rotation;
 			offset.scale = Vector3.one;
 			bench.gameObject.transform.localScale = size;
-
 			NetworkServer.Spawn(bench);
-			Benches.Add(bench);
+			if (Plugin.BchHubs.TryGetValue(Ply, out List<GameObject> objs))
+			{
+				objs.Add(bench);
+			}
+			else
+			{
+				Plugin.BchHubs.Add(Ply, new List<GameObject>());
+				Plugin.BchHubs[Ply].Add(bench);
+				BenchIndex = Plugin.BchHubs[Ply].Count();
+			}
+			if (BenchIndex != 1)
+				BenchIndex = objs.Count();
 			bench.GetComponent<WorkStation>().Networkposition = offset;
 			bench.AddComponent<WorkStationUpgrader>();
 		}

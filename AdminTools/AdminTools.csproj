@@ -135,6 +135,8 @@
     <Compile Include="Commands\Size\User.cs" />
     <Compile Include="Commands\SpawnWorkbench\All.cs" />
     <Compile Include="Commands\SpawnWorkbench\Clear.cs" />
+    <Compile Include="Commands\SpawnWorkbench\ClearAll.cs" />
+    <Compile Include="Commands\SpawnWorkbench\Count.cs" />
     <Compile Include="Commands\SpawnWorkbench\SpawnWorkbench.cs" />
     <Compile Include="Commands\SpawnWorkbench\User.cs" />
     <Compile Include="Commands\Tags\Hide.cs" />

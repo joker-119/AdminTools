@@ -24,7 +24,7 @@ namespace AdminTools.Commands.Mute
 
             if (arguments.Count != 0)
             {
-                response = "Usage: mute icom";
+                response = "Usage: pmute icom";
                 return false;
             }
 

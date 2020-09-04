@@ -23,6 +23,7 @@ namespace AdminTools.Commands.SpawnWorkbench
                 return false;
             }
 
+            Player Sender = Player.Get(((CommandSender)sender).Nickname);
             if (arguments.Count != 4)
             {
                 response = "Usage: spawnworkbench user (player id / name) (x value) (y value) (z value)";
@@ -59,8 +60,8 @@ namespace AdminTools.Commands.SpawnWorkbench
                 return false;
             }
 
-            EventHandlers.SpawnWorkbench(Ply.Position + Ply.ReferenceHub.PlayerCameraReference.forward * 2, Ply.GameObject.transform.rotation.eulerAngles, new Vector3(xval, yval, zval));
-            response = $"A workbench has spawned on Player {Ply.Nickname}";
+            EventHandlers.SpawnWorkbench(Sender, Ply.Position + Ply.ReferenceHub.PlayerCameraReference.forward * 2, Ply.GameObject.transform.rotation.eulerAngles, new Vector3(xval, yval, zval), out int BenchIndex);
+            response = $"A workbench has spawned on Player {Ply.Nickname}, you now spawned in a total of {(BenchIndex != 1 ? $"{BenchIndex} workbenches" : $"{BenchIndex} workbench")}";
             return true;
         }
     }

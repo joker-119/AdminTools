@@ -24,7 +24,7 @@ namespace AdminTools.Commands.Unmute
 
             if (arguments.Count != 0)
             {
-                response = "Usage: unmute icom";
+                response = "Usage: punmute icom";
                 return false;
             }
 

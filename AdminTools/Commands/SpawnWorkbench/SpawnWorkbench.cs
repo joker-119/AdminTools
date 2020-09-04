@@ -20,6 +20,8 @@ namespace AdminTools.Commands.SpawnWorkbench
         {
             RegisterCommand(new All());
             RegisterCommand(new Clear());
+            RegisterCommand(new ClearAll());
+            RegisterCommand(new Count());
             RegisterCommand(new User());
         }
 
@@ -32,7 +34,7 @@ namespace AdminTools.Commands.SpawnWorkbench
                 return false;
             }
 
-            response = "Invalid subcommand. Available ones: all / *, clear, user";
+            response = "Invalid subcommand. Available ones: all / *, clear, clearall, user";
             return false;
         }
     }

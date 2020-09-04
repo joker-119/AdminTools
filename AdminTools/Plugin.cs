@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using Exiled.API.Features;
 using Handlers = Exiled.Events.Handlers;
+using UnityEngine;
 
 namespace AdminTools
 {
-	public class Plugin : Exiled.API.Features.Plugin<Config>
+	public class Plugin : Plugin<Config>
 	{
 		public override string Author { get; } = "Galaxy119";
 		public override string Name { get; } = "Admin Tools";
@@ -17,6 +18,7 @@ namespace AdminTools
 		public static List<Jailed> JailedPlayers = new List<Jailed>();
 		public static Dictionary<Player, InstantKillComponent> IkHubs = new Dictionary<Player, InstantKillComponent>();
 		public static Dictionary<Player, BreakDoorComponent> BdHubs = new Dictionary<Player, BreakDoorComponent>();
+		public static Dictionary<Player, List<GameObject>> BchHubs = new Dictionary<Player, List<GameObject>>();
 		public string OverwatchFilePath;
 		public string HiddenTagsFilePath;
 

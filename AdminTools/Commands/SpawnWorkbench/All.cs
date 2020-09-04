@@ -23,6 +23,7 @@ namespace AdminTools.Commands.SpawnWorkbench
                 return false;
             }
 
+            Player Sender = Player.Get(((CommandSender)sender).Nickname);
             if (arguments.Count != 3)
             {
                 response = "Usage: spawnworkbench (all / *) (x value) (y value) (z value)";
@@ -47,15 +48,17 @@ namespace AdminTools.Commands.SpawnWorkbench
                 return false;
             }
 
+            int Index = 0;
             foreach (Player Ply in Player.List)
             {
                 if (Ply.Role == RoleType.Spectator || Ply.Role == RoleType.None)
                     continue;
 
-                EventHandlers.SpawnWorkbench(Ply.Position + Ply.ReferenceHub.PlayerCameraReference.forward * 2, Ply.GameObject.transform.rotation.eulerAngles, new Vector3(xval, yval, zval));
+                EventHandlers.SpawnWorkbench(Sender, Ply.Position + Ply.ReferenceHub.PlayerCameraReference.forward * 2, Ply.GameObject.transform.rotation.eulerAngles, new Vector3(xval, yval, zval), out int BenchIndex);
+                Index = BenchIndex;
             }
             
-            response = $"A workbench has spawned on everyone";
+            response = $"A workbench has spawned on everyone, you now spawned in a total of {(Index != 1 ? $"{Index} workbenches" : $"{Index} workbench")}";
             return true;
         }
     }

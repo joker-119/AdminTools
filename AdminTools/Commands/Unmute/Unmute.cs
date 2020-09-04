@@ -10,7 +10,7 @@ namespace AdminTools.Commands.Unmute
     {
         public Unmute() => LoadGeneratedCommands();
 
-        public override string Command { get; } = "unmute";
+        public override string Command { get; } = "punmute";
 
         public override string[] Aliases { get; } = new string[] { };
 

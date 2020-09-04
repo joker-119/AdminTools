@@ -24,7 +24,7 @@ namespace AdminTools.Commands.Mute
 
             if (arguments.Count != 0)
             {
-                response = "Usage: mute all";
+                response = "Usage: pmute all";
                 return false;
             }
 
