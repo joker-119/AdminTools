@@ -112,6 +112,7 @@
     <Compile Include="Commands\Dummy\Count.cs" />
     <Compile Include="Commands\Dummy\Dummy.cs" />
     <Compile Include="Commands\Dummy\User.cs" />
+    <Compile Include="Commands\Enums\Enums.cs" />
     <Compile Include="Commands\Ghost\All.cs" />
     <Compile Include="Commands\Ghost\Clear.cs" />
     <Compile Include="Commands\Ghost\Ghost.cs" />
