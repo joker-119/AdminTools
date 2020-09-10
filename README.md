@@ -45,7 +45,7 @@ dropsize - at.items
 dummy - at.dummy
 ghost - at.ghost
 grenade - at.grenade
-hp - at.hp
+hp - PlayerPermissions.PlayersManagement (config_remoteadmin.txt)
 instantkill - at.ik
 inventory - at.inv
 jail - at.jail
