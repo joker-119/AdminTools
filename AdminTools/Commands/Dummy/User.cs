@@ -28,6 +28,7 @@ namespace AdminTools.Commands.Dummy
                 return false;
             }
 
+            Player Sender = Player.Get(((CommandSender)sender).Nickname);
             Player Ply = Player.Get(arguments.At(0));
             if (Ply == null)
             {
@@ -64,8 +65,8 @@ namespace AdminTools.Commands.Dummy
                 return false;
             }
 
-            EventHandlers.SpawnDummyModel(Ply.Position, Ply.GameObject.transform.localRotation, Role, xval, yval, zval);
-            response = $"A {Role.ToString()} dummy has spawned on Player {Ply.Nickname}";
+            EventHandlers.SpawnDummyModel(Sender, Ply.Position, Ply.GameObject.transform.localRotation, Role, xval, yval, zval, out int DummyIndex);
+            response = $"A {Role.ToString()} dummy has spawned on Player {Ply.Nickname}, you now spawned in a total of {(DummyIndex != 1 ? $"{DummyIndex} dummies" : $"{DummyIndex} dummy")}";
             return true;
         }
     }

@@ -24,7 +24,7 @@ namespace AdminTools.Commands.Grenade
 
             if (arguments.Count < 2 || arguments.Count > 3)
             {
-                response = "Usage: grenade (player id / name) (grenade name) (grenade time)";
+                response = "Usage: grenade (player id / name) (GrenadeType) (grenade time)";
                 return false;
             }
 

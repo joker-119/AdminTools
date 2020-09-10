@@ -44,8 +44,9 @@ namespace AdminTools
 			return SB.ToString();
 		}
 
-		public static void SpawnDummyModel(Vector3 position, Quaternion rotation, RoleType role, float x, float y, float z)
+		public static void SpawnDummyModel(Player Ply, Vector3 position, Quaternion rotation, RoleType role, float x, float y, float z, out int DummyIndex)
 		{
+			DummyIndex = 0;
 			GameObject obj =
 				Object.Instantiate(
 					NetworkManager.singleton.spawnPrefabs.FirstOrDefault(p => p.gameObject.name == "Player"));
@@ -53,6 +54,8 @@ namespace AdminTools
 			if (ccm == null)
 				Log.Error("CCM is null, this can cause problems!");
 			ccm.CurClass = role;
+			ccm.GodMode = true;
+			ccm.OldRefreshPlyModel(PlayerManager.localPlayer);
 			obj.GetComponent<NicknameSync>().Network_myNickSync = "Dummy";
 			obj.GetComponent<QueryProcessor>().PlayerId = 9999;
 			obj.GetComponent<QueryProcessor>().NetworkPlayerId = 9999;
@@ -60,6 +63,18 @@ namespace AdminTools
 			obj.transform.position = position;
 			obj.transform.rotation = rotation;
 			NetworkServer.Spawn(obj);
+			if (Plugin.DumHubs.TryGetValue(Ply, out List<GameObject> objs))
+			{
+				objs.Add(obj);
+			}
+			else
+			{
+				Plugin.DumHubs.Add(Ply, new List<GameObject>());
+				Plugin.DumHubs[Ply].Add(obj);
+				DummyIndex = Plugin.DumHubs[Ply].Count();
+			}
+			if (DummyIndex != 1)
+				DummyIndex = objs.Count();
 		}
 
 		public static IEnumerator<float> SpawnBodies(Player player, RoleType role, int count)

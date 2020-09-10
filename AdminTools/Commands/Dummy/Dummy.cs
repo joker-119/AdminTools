@@ -19,6 +19,9 @@ namespace AdminTools.Commands.Dummy
         public override void LoadGeneratedCommands()
         {
             RegisterCommand(new All());
+            RegisterCommand(new Clear());
+            RegisterCommand(new ClearAll());
+            RegisterCommand(new Count());
             RegisterCommand(new User());
         }
 
@@ -31,7 +34,7 @@ namespace AdminTools.Commands.Dummy
                 return false;
             }
 
-            response = "Invalid subcommand: Available ones: all / *, user";
+            response = "Invalid subcommand: Available ones: all / *, clear, clearall, count, user";
             return false;
         }
     }

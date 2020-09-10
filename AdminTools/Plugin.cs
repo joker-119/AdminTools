@@ -12,13 +12,12 @@ namespace AdminTools
 		public override string Author { get; } = "Galaxy119";
 		public override string Name { get; } = "Admin Tools";
 		public override string Prefix { get; } = "AT";
-		public override Version Version { get; } = new Version(2, 0, 0);
-		public override Version RequiredExiledVersion { get; } = new Version(2, 1, 2);
 		public EventHandlers EventHandlers;
 		public static List<Jailed> JailedPlayers = new List<Jailed>();
 		public static Dictionary<Player, InstantKillComponent> IkHubs = new Dictionary<Player, InstantKillComponent>();
 		public static Dictionary<Player, BreakDoorComponent> BdHubs = new Dictionary<Player, BreakDoorComponent>();
 		public static Dictionary<Player, List<GameObject>> BchHubs = new Dictionary<Player, List<GameObject>>();
+		public static Dictionary<Player, List<GameObject>> DumHubs = new Dictionary<Player, List<GameObject>>();
 		public string OverwatchFilePath;
 		public string HiddenTagsFilePath;
 

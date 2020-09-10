@@ -48,7 +48,7 @@ namespace AdminTools.Commands.Grenade
             {
                 if (arguments.Count != 2)
                 {
-                    response = "Usage: grenade (all / *) (grenade name) (grenade time)";
+                    response = "Usage: grenade (all / *) (GrenadeType) (grenade time)";
                     return false;
                 }
                 if (!float.TryParse(arguments.At(1), out float Time))

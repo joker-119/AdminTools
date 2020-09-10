@@ -1,31 +1,32 @@
 ﻿using CommandSystem;
 using Exiled.API.Features;
-using RemoteAdmin;
+using Exiled.Permissions.Extensions;
 using System;
+using System.Collections.Generic;
+using UnityEngine;
 
-
-namespace AdminTools.Commands.Hp
+namespace AdminTools.Commands.Dummy
 {
-    public class User : ICommand
+    public class Count : ICommand
     {
-        public string Command { get; } = "user";
+        public string Command { get; } = "count";
 
         public string[] Aliases { get; } = new string[] { };
 
-        public string Description { get; } = "Sets a users HP to a specified value";
+        public string Description { get; } = "Counts the number of dummies  a user has spawned in";
 
         public bool Execute(ArraySegment<string> arguments, ICommandSender sender, out string response)
         {
             EventHandlers.LogCommandUsed((CommandSender)sender, EventHandlers.FormatArguments(arguments, 0));
-            if (!CommandProcessor.CheckPermissions(((CommandSender)sender), "hp", PlayerPermissions.PlayersManagement, "AdminTools", false))
+            if (!((CommandSender)sender).CheckPermission("at.dummy"))
             {
                 response = "You do not have permission to use this command";
                 return false;
             }
 
-            if (arguments.Count != 2)
+            if (arguments.Count != 1)
             {
-                response = "Usage: hp user (player id / name) (value)";
+                response = "Usage: dummy count (player id / name)";
                 return false;
             }
 
@@ -36,17 +37,13 @@ namespace AdminTools.Commands.Hp
                 return false;
             }
 
-            if (!int.TryParse(arguments.At(1), out int value))
+            if (!Plugin.DumHubs.TryGetValue(Ply, out List<GameObject> objs) || objs.Count == 0)
             {
-                response = $"Invalid value for HP: {value}";
+                response = $"{Ply.Nickname} has not spawned in any dummies in";
                 return false;
             }
 
-            if (value <= 0)
-                Ply.Kill();
-            else
-                Ply.Health = value;
-            response = $"Player {Ply.Nickname}'s HP was set to {value}";
+            response = $"{Ply.Nickname} has spawned in {(objs.Count != 1 ? $"{objs.Count} dummies" : $"{objs.Count} dummy")}";
             return true;
         }
     }

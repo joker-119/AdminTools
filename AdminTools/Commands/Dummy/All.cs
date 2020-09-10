@@ -15,6 +15,7 @@ namespace AdminTools.Commands.Dummy
 
         public bool Execute(ArraySegment<string> arguments, ICommandSender sender, out string response)
         {
+            int Index = 0;
             EventHandlers.LogCommandUsed((CommandSender)sender, EventHandlers.FormatArguments(arguments, 0));
             if (!((CommandSender)sender).CheckPermission("at.dummy"))
             {
@@ -22,6 +23,7 @@ namespace AdminTools.Commands.Dummy
                 return false;
             }
 
+            Player Sender = Player.Get(((CommandSender)sender).Nickname);
             if (arguments.Count != 4)
             {
                 response = "Usage: dummy (all / *) (RoleType) (x value) (y value) (z value)";
@@ -56,10 +58,11 @@ namespace AdminTools.Commands.Dummy
                 if (Ply.Role == RoleType.Spectator || Ply.Role == RoleType.None)
                     continue;
 
-                EventHandlers.SpawnDummyModel(Ply.Position, Ply.GameObject.transform.localRotation, Role, xval, yval, zval);
+                EventHandlers.SpawnDummyModel(Sender, Ply.Position, Ply.GameObject.transform.localRotation, Role, xval, yval, zval, out int DummyIndex);
+                Index = DummyIndex;
             }
 
-            response = $"A {Role.ToString()} dummy has spawned on everyone";
+            response = $"A {Role.ToString()} dummy has spawned on everyone, you now spawned in a total of {(Index != 1 ? $"{Index} dummies" : $"{Index} dummies")}";
             return true;
         }
     }

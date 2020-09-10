@@ -1,6 +1,6 @@
 ﻿using CommandSystem;
 using Exiled.API.Features;
-using Exiled.Permissions.Extensions;
+using RemoteAdmin;
 using System;
 
 namespace AdminTools.Commands.Hp
@@ -16,7 +16,7 @@ namespace AdminTools.Commands.Hp
         public bool Execute(ArraySegment<string> arguments, ICommandSender sender, out string response)
         {
             EventHandlers.LogCommandUsed((CommandSender)sender, EventHandlers.FormatArguments(arguments, 0));
-            if (!((CommandSender)sender).CheckPermission("at.hp"))
+            if (!CommandProcessor.CheckPermissions(((CommandSender)sender), "hp", PlayerPermissions.PlayersManagement, "AdminTools", false))
             {
                 response = "You do not have permission to use this command";
                 return false;
