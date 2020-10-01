@@ -16,7 +16,7 @@ namespace AdminTools.Commands.Regeneration
 
         public override string[] Aliases { get; } = new string[] { };
 
-        public override string Description { get; } = "Gives regeneration to players, clears regeneration from players, and shows who has regeneration";
+        public override string Description { get; } = "Manages regeneration properties for users";
 
         public override void LoadGeneratedCommands() { }
 

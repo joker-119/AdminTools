@@ -4,6 +4,8 @@ An SCP:SL EXILED plugin that gives server owners fun commands and logging functi
 ### Features
 ```
 - Log commands in your server files!
+- Quickly send a message to all staff
+- Set AHP of players with ease
 - Spawn a SCP-018 ball on players with a jingle when everyone gets a SCP-018 instance
 - Break down doors, gates, bulletproof lockers, every door related item in the game
 - Cleanup all item pickups and ragdolls from the server manually with ease
@@ -20,8 +22,12 @@ An SCP:SL EXILED plugin that gives server owners fun commands and logging functi
 - Jail users to help with enforicing server rules
 - Kick users with custom messages
 - Kill players for whatever reason you want
+- Quickly send a message to a user
 - Mute all users from using voice or intercom with ease
 - Get and mofidy positions of players with ease
+- Give players the ability to pry gates open
+- Randomly teleport users to a random part of the facility
+- Give players the ability to regenerate health
 - Send players up high in the sky as a rocket and watch them explode
 - Scale players hitboxes to whatever you want
 - Send a message easily to all staff, a specific user group, or a user
@@ -37,21 +43,29 @@ An SCP:SL EXILED plugin that gives server owners fun commands and logging functi
 
 ### Permissions
 ```
+abc - PlayerPermissions.Broadcasting (config_remoteadmin.txt)
+ahp - PlayerPermissions.PlayersManagement (config_remoteadmin.txt)
 ball - at.ball
 breakdoors - at.bd
 cleanup - at.cleanup
 dropitem - at.items
 dropsize - at.items
 dummy - at.dummy
+expl - at.explode
 ghost - at.ghost
 grenade - at.grenade
+hbc - PlayerPermissions.Broadcasting (config_remoteadmin.txt)
 hp - PlayerPermissions.PlayersManagement (config_remoteadmin.txt)
 instantkill - at.ik
 inventory - at.inv
 jail - at.jail
 kick - at.kick
 kill - at.kill
+pbc - PlayerPermissions.Broadcasting (config_remoteadmin.txt)
 position - at.tp
+prygate - at.prygate
+randomtp - PlayerPermissions.PlayersManagement (config_remoteadmin.txt) 
+reg - at.reg
 rocket - at.rocket
 scale - at.size
 sendmessage - at.sm
