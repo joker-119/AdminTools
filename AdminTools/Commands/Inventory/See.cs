@@ -26,7 +26,7 @@ namespace AdminTools.Commands.Inventory
             if (arguments.Count != 1)
             {
                 response = "Usage: inventory see (player id / name)";
-                return true;
+                return false;
             }
 
             Player Ply = Player.Get(arguments.At(0));

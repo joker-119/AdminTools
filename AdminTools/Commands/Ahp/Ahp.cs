@@ -1,36 +1,36 @@
 ﻿using CommandSystem;
 using Exiled.API.Features;
-using Exiled.Permissions.Extensions;
+using RemoteAdmin;
 using System;
 
-namespace AdminTools.Commands.Kill
+namespace AdminTools.Commands.Ahp
 {
     [CommandHandler(typeof(RemoteAdminCommandHandler))]
     [CommandHandler(typeof(GameConsoleCommandHandler))]
-    public class Kill : ParentCommand
+    public class Ahp : ParentCommand
     {
-        public Kill() => LoadGeneratedCommands();
+        public Ahp() => LoadGeneratedCommands();
 
-        public override string Command { get; } = "kill";
+        public override string Command { get; } = "ahp";
 
         public override string[] Aliases { get; } = new string[] { };
 
-        public override string Description { get; } = "Kills everyone or a user instantly";
+        public override string Description { get; } = "Sets a user or users Adrenaline HP to a specified value";
 
         public override void LoadGeneratedCommands() { }
 
         protected override bool ExecuteParent(ArraySegment<string> arguments, ICommandSender sender, out string response)
         {
             EventHandlers.LogCommandUsed((CommandSender)sender, EventHandlers.FormatArguments(arguments, 0));
-            if (!((CommandSender)sender).CheckPermission("at.kill"))
+            if (!CommandProcessor.CheckPermissions(((CommandSender)sender), "ahp", PlayerPermissions.PlayersManagement, "AdminTools", false))
             {
                 response = "You do not have permission to use this command";
                 return false;
             }
 
-            if (arguments.Count != 1)
+            if (arguments.Count != 2)
             {
-                response = "Usage: kill ((player id / name) or (all / *))";
+                response = "Usage: ahp ((player id / name) or (all / *)) (value)";
                 return false;
             }
 
@@ -38,15 +38,16 @@ namespace AdminTools.Commands.Kill
             {
                 case "*":
                 case "all":
-                    foreach (Player Ply in Player.List)
+                    if (!int.TryParse(arguments.At(1), out int value) || value < 0)
                     {
-                        if (Ply.Role == RoleType.Spectator || Ply.Role == RoleType.None)
-                            continue;
-
-                        Ply.Kill();
+                        response = $"Invalid value for AHP: {value}";
+                        return false;
                     }
 
-                    response = "Everyone has been game ended (killed) now";
+                    foreach (Player Ply in Player.List)
+                        Ply.AdrenalineHealth = value;
+
+                    response = $"Everyone's AHP was set to {value}";
                     return true;
                 default:
                     Player Pl = Player.Get(arguments.At(0));
@@ -55,14 +56,15 @@ namespace AdminTools.Commands.Kill
                         response = $"Player not found: {arguments.At(0)}";
                         return false;
                     }
-                    else if (Pl.Role == RoleType.Spectator || Pl.Role == RoleType.None)
+
+                    if (!int.TryParse(arguments.At(1), out int val) || val < 0)
                     {
-                        response = $"Player {Pl.Nickname} is not a valid class to kill";
+                        response = $"Invalid value for AHP: {val}";
                         return false;
                     }
 
-                    Pl.Kill();
-                    response = $"Player {Pl.Nickname} has been game ended (killed) now";
+                    Pl.AdrenalineHealth = val;
+                    response = $"Player {Pl.Nickname}'s AHP was set to {val}";
                     return true;
             }
         }

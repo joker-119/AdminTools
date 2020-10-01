@@ -1,4 +1,5 @@
 ﻿using CommandSystem;
+using Exiled.API.Features;
 using Exiled.Permissions.Extensions;
 using System;
 
@@ -16,12 +17,7 @@ namespace AdminTools.Commands.Scale
 
         public override string Description { get; } = "Scales all users or a user by a specified value";
 
-        public override void LoadGeneratedCommands()
-        {
-            RegisterCommand(new All());
-            RegisterCommand(new Reset());
-            RegisterCommand(new User());
-        }
+        public override void LoadGeneratedCommands() { }
 
         protected override bool ExecuteParent(ArraySegment<string> arguments, ICommandSender sender, out string response)
         {
@@ -32,8 +28,69 @@ namespace AdminTools.Commands.Scale
                 return false;
             }
 
-            response = "Invalid subcommand. Available ones: all / *, reset, user";
-            return false;
+            if (arguments.Count < 1)
+            {
+                response = "Usage:\nscale ((player id / name) or (all / *)) (value)" +
+                    "\nscale reset";
+                return false;
+            }
+
+            switch (arguments.At(0))
+            {
+                case "reset":
+                    if (arguments.Count != 1)
+                    {
+                        response = "Usage: scale reset";
+                        return false;
+                    }
+                    foreach (Player Plyr in Player.List)
+                        EventHandlers.SetPlayerScale(Plyr.GameObject, 1);
+
+                    response = $"Everyone's scale has been reset";
+                    return true;
+                case "*":
+                case "all":
+                    if (arguments.Count != 2)
+                    {
+                        response = "Usage: scale (all / *) (value)";
+                        return false;
+                    }
+
+                    if (!float.TryParse(arguments.At(1), out float value))
+                    {
+                        response = $"Invalid value for scale: {arguments.At(1)}";
+                        return false;
+                    }
+
+                    foreach (Player Ply in Player.List)
+                        EventHandlers.SetPlayerScale(Ply.GameObject, value);
+
+                    response = $"Everyone's scale has been set to {value}";
+                    return true;
+                default:
+                    if (arguments.Count != 2)
+                    {
+                        response = "Usage: scale (player id / name) (value)";
+                        return false;
+                    }
+
+                    Player Pl = Player.Get(arguments.At(0));
+                    if (Pl == null)
+                    {
+                        response = $"Player not found: {arguments.At(0)}";
+                        return true;
+                    }
+
+                    if (!float.TryParse(arguments.At(1), out float val))
+                    {
+                        response = $"Invalid value for scale: {arguments.At(1)}";
+                        return false;
+                    }
+
+                    EventHandlers.SetPlayerScale(Pl.GameObject, val);
+                    response = $"Player {Pl.Nickname}'s scale has been set to {val}";
+                    return true;
+            }
         }
     }
 }

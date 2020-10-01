@@ -1,28 +1,30 @@
 ﻿using CommandSystem;
 using Exiled.API.Features;
-using Exiled.Permissions.Extensions;
+using RemoteAdmin;
 using System;
+using System.Linq;
+using UnityEngine;
 
-namespace AdminTools.Commands.Kill
+namespace AdminTools.Commands.RandomTeleport
 {
     [CommandHandler(typeof(RemoteAdminCommandHandler))]
     [CommandHandler(typeof(GameConsoleCommandHandler))]
-    public class Kill : ParentCommand
+    public class RandomTeleport : ParentCommand
     {
-        public Kill() => LoadGeneratedCommands();
+        public RandomTeleport() => LoadGeneratedCommands();
 
-        public override string Command { get; } = "kill";
+        public override string Command { get; } = "randomtp";
 
         public override string[] Aliases { get; } = new string[] { };
 
-        public override string Description { get; } = "Kills everyone or a user instantly";
+        public override string Description { get; } = "Randomly teleports a user or all users to a random room in the facility";
 
         public override void LoadGeneratedCommands() { }
 
         protected override bool ExecuteParent(ArraySegment<string> arguments, ICommandSender sender, out string response)
         {
             EventHandlers.LogCommandUsed((CommandSender)sender, EventHandlers.FormatArguments(arguments, 0));
-            if (!((CommandSender)sender).CheckPermission("at.kill"))
+            if (!CommandProcessor.CheckPermissions(((CommandSender)sender), "randomtp", PlayerPermissions.PlayersManagement, "AdminTools", false))
             {
                 response = "You do not have permission to use this command";
                 return false;
@@ -30,7 +32,7 @@ namespace AdminTools.Commands.Kill
 
             if (arguments.Count != 1)
             {
-                response = "Usage: kill ((player id / name) or (all / *))";
+                response = "Usage: randomtp ((player id / name) or (all / *))";
                 return false;
             }
 
@@ -40,13 +42,11 @@ namespace AdminTools.Commands.Kill
                 case "all":
                     foreach (Player Ply in Player.List)
                     {
-                        if (Ply.Role == RoleType.Spectator || Ply.Role == RoleType.None)
-                            continue;
-
-                        Ply.Kill();
+                        Room RandRoom = Map.Rooms[Plugin.NumGen.Next(0, Map.Rooms.Count())];
+                        Ply.Position = RandRoom.Position + Vector3.up;
                     }
 
-                    response = "Everyone has been game ended (killed) now";
+                    response = $"Everyone was teleported to a random room in the facility";
                     return true;
                 default:
                     Player Pl = Player.Get(arguments.At(0));
@@ -55,14 +55,11 @@ namespace AdminTools.Commands.Kill
                         response = $"Player not found: {arguments.At(0)}";
                         return false;
                     }
-                    else if (Pl.Role == RoleType.Spectator || Pl.Role == RoleType.None)
-                    {
-                        response = $"Player {Pl.Nickname} is not a valid class to kill";
-                        return false;
-                    }
 
-                    Pl.Kill();
-                    response = $"Player {Pl.Nickname} has been game ended (killed) now";
+                    Room Rand = Map.Rooms[Plugin.NumGen.Next(0, Map.Rooms.Count())];
+                    Pl.Position = Rand.Position + Vector3.up;
+
+                    response = $"Player {Pl.Nickname} was teleported to {Rand.Name}";
                     return true;
             }
         }

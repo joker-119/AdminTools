@@ -33,6 +33,12 @@ namespace AdminTools
 				return;
 		}
 
+		public void OnDoorOpen(InteractingDoorEventArgs ev)
+		{
+			if (Plugin.PryGateHubs.Contains(ev.Player))
+				ev.Door.PryGate();
+		}
+
 		public static string FormatArguments(ArraySegment<string> sentence, int index)
 		{
 			StringBuilder SB = new StringBuilder();
