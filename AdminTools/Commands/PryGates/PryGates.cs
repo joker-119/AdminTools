@@ -1,6 +1,7 @@
 ﻿using CommandSystem;
 using Exiled.API.Features;
 using Exiled.Permissions.Extensions;
+using NorthwoodLib.Pools;
 using System;
 using System.Text;
 
@@ -57,7 +58,7 @@ namespace AdminTools.Commands.PryGates
                         return false;
                     }
 
-                    StringBuilder PlayerLister = new StringBuilder(Plugin.PryGateHubs.Count != 0 ? "Players with the ability to pry gates:\n" : "No players currently online have the ability to pry gates");
+                    StringBuilder PlayerLister = StringBuilderPool.Shared.Rent(Plugin.PryGateHubs.Count != 0 ? "Players with the ability to pry gates:\n" : "No players currently online have the ability to pry gates");
                     if (Plugin.PryGateHubs.Count > 0)
                     {
                         foreach (Player Ply in Plugin.PryGateHubs)
@@ -65,13 +66,13 @@ namespace AdminTools.Commands.PryGates
 
                         int length = PlayerLister.ToString().Length;
                         response = PlayerLister.ToString().Substring(0, length - 2);
-                        PlayerLister.Clear();
+                        StringBuilderPool.Shared.Return(PlayerLister);
                         return true;
                     }
                     else
                     {
-                        response = "There are no players currently online that can pry gates";
-                        PlayerLister.Clear();
+                        response = PlayerLister.ToString();
+                        StringBuilderPool.Shared.Return(PlayerLister);
                         return true;
                     }
                 case "remove":

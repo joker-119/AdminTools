@@ -1,6 +1,7 @@
 ﻿using CommandSystem;
 using Exiled.API.Features;
 using Exiled.Permissions.Extensions;
+using NorthwoodLib.Pools;
 using System;
 using System.Linq;
 using System.Text;
@@ -87,7 +88,7 @@ namespace AdminTools.Commands.Position
                                 response = "Usage: position (all / *) (get)";
                                 return false;
                             }
-                            StringBuilder PositionBuilder = new StringBuilder();
+                            StringBuilder PositionBuilder = StringBuilderPool.Shared.Rent();
                             if (Player.List.Count() == 0)
                             {
                                 response = "There are no players currently online";
@@ -108,7 +109,7 @@ namespace AdminTools.Commands.Position
                                 PositionBuilder.AppendLine(Ply.Position.z.ToString());
                             }
                             string Message = PositionBuilder.ToString();
-                            PositionBuilder.Clear();
+                            StringBuilderPool.Shared.Return(PositionBuilder);
                             response = Message;
                             return true;
                         case PositionModifier.Add:

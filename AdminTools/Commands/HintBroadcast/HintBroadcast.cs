@@ -1,5 +1,6 @@
 ﻿using CommandSystem;
 using Exiled.API.Features;
+using NorthwoodLib.Pools;
 using RemoteAdmin;
 using System;
 using System.Collections.Generic;
@@ -98,7 +99,7 @@ namespace AdminTools.Commands.HintBroadcast
                         P.ShowHint(EventHandlers.FormatArguments(arguments, 3), tme);
 
 
-                    StringBuilder Builder = new StringBuilder("Hint sent to players: ");
+                    StringBuilder Builder = StringBuilderPool.Shared.Rent("Hint sent to players: ");
                     foreach (Player P in PlyList)
                     {
                         Builder.Append("\"");
@@ -107,7 +108,7 @@ namespace AdminTools.Commands.HintBroadcast
                         Builder.Append(" ");
                     }
                     string message = Builder.ToString();
-                    Builder.Clear();
+                    StringBuilderPool.Shared.Return(Builder);
                     response = message;
                     return true;
                 case "group":
@@ -166,7 +167,7 @@ namespace AdminTools.Commands.HintBroadcast
                             P.ShowHint(EventHandlers.FormatArguments(arguments, 3), e);
 
 
-                    StringBuilder Bdr = new StringBuilder("Hint sent to groups with badge text: ");
+                    StringBuilder Bdr = StringBuilderPool.Shared.Rent("Hint sent to groups with badge text: ");
                     foreach (string P in GroupList)
                     {
                         Bdr.Append("\"");
@@ -175,7 +176,7 @@ namespace AdminTools.Commands.HintBroadcast
                         Bdr.Append(" ");
                     }
                     string ms = Bdr.ToString();
-                    Bdr.Clear();
+                    StringBuilderPool.Shared.Return(Bdr);
                     response = ms;
                     return true;
                 case "role":
@@ -230,7 +231,7 @@ namespace AdminTools.Commands.HintBroadcast
                         if (RoleList.Contains(P.Role))
                             P.ShowHint(EventHandlers.FormatArguments(arguments, 3), ti);
 
-                    StringBuilder Build = new StringBuilder("Hint sent to roles: ");
+                    StringBuilder Build = StringBuilderPool.Shared.Rent("Hint sent to roles: ");
                     foreach (RoleType Ro in RoleList)
                     {
                         Build.Append("\"");
@@ -239,7 +240,7 @@ namespace AdminTools.Commands.HintBroadcast
                         Build.Append(" ");
                     }
                     string msg = Build.ToString();
-                    Build.Clear();
+                    StringBuilderPool.Shared.Return(Build);
                     response = msg;
                     return true;
                 case "random":

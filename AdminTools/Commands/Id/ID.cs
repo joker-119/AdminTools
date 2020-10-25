@@ -1,5 +1,6 @@
 ﻿using CommandSystem;
 using Exiled.API.Features;
+using NorthwoodLib.Pools;
 using System;
 using System.Linq;
 using System.Text;
@@ -33,11 +34,13 @@ namespace AdminTools.Commands.Id
             {
                 case "*":
                 case "all":
-                    StringBuilder Builder = new StringBuilder();
+                    StringBuilder Builder = StringBuilderPool.Shared.Rent();
                     if (Player.List.Count() == 0)
                     {
                         Builder.AppendLine("There are no players currently online in the server");
-                        response = Builder.ToString();
+                        string msg = Builder.ToString();
+                        StringBuilderPool.Shared.Return(Builder);
+                        response = msg;
                         return true;
                     }
                     else
@@ -51,7 +54,9 @@ namespace AdminTools.Commands.Id
                             Builder.Append(" - ");
                             Builder.AppendLine(Ply.Id.ToString());
                         }
-                        response = Builder.ToString();
+                        string msg = Builder.ToString();
+                        StringBuilderPool.Shared.Return(Builder);
+                        response = msg;
                         return true;
                     }
                 default:

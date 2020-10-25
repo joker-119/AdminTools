@@ -8,6 +8,7 @@ using Exiled.Events.EventArgs;
 using Grenades;
 using MEC;
 using Mirror;
+using NorthwoodLib.Pools;
 using RemoteAdmin;
 using UnityEngine;
 using Log = Exiled.API.Features.Log;
@@ -41,13 +42,15 @@ namespace AdminTools
 
 		public static string FormatArguments(ArraySegment<string> sentence, int index)
 		{
-			StringBuilder SB = new StringBuilder();
+			StringBuilder SB = StringBuilderPool.Shared.Rent();
 			foreach (string word in sentence.Segment(index))
 			{
 				SB.Append(word);
 				SB.Append(" ");
 			}
-			return SB.ToString();
+			string msg = SB.ToString();
+			StringBuilderPool.Shared.Return(SB);
+			return msg;
 		}
 
 		public static void SpawnDummyModel(Player Ply, Vector3 position, Quaternion rotation, RoleType role, float x, float y, float z, out int DummyIndex)

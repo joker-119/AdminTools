@@ -1,4 +1,5 @@
 ﻿using CommandSystem;
+using NorthwoodLib.Pools;
 using System;
 using System.Text;
 
@@ -21,7 +22,7 @@ namespace AdminTools.Commands.Enums
         protected override bool ExecuteParent(ArraySegment<string> arguments, ICommandSender sender, out string response)
         {
             EventHandlers.LogCommandUsed((CommandSender)sender, EventHandlers.FormatArguments(arguments, 0));
-            StringBuilder ListBuilder = new StringBuilder();
+            StringBuilder ListBuilder = StringBuilderPool.Shared.Rent();
             ListBuilder.Append("Here are the following enums you can use in commands:\n\nBreakType: ");
             foreach (BreakType Bt in Enum.GetValues(typeof(BreakType)))
             {
@@ -57,7 +58,7 @@ namespace AdminTools.Commands.Enums
                 ListBuilder.Append(" ");
             }
             string message = ListBuilder.ToString();
-            ListBuilder.Clear();
+            StringBuilderPool.Shared.Return(ListBuilder);
             response = message;
             return true;
         }

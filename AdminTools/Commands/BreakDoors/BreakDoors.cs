@@ -1,6 +1,7 @@
 ﻿using CommandSystem;
 using Exiled.API.Features;
 using Exiled.Permissions.Extensions;
+using NorthwoodLib.Pools;
 using System;
 using System.Text;
 
@@ -60,7 +61,7 @@ namespace AdminTools.Commands.BreakDoors
                         return false;
                     }
 
-                    StringBuilder PlayerLister = new StringBuilder(Plugin.BdHubs.Count != 0 ? "Players with break doors on:\n" : "No players currently online have breaking doors on");
+                    StringBuilder PlayerLister = StringBuilderPool.Shared.Rent(Plugin.BdHubs.Count != 0 ? "Players with break doors on:\n" : "No players currently online have breaking doors on");
                     if (Plugin.BdHubs.Count == 0)
                     {
                         response = PlayerLister.ToString();
@@ -73,7 +74,9 @@ namespace AdminTools.Commands.BreakDoors
                         PlayerLister.Append(", ");
                     }
 
-                    response = PlayerLister.ToString().Substring(0, PlayerLister.ToString().Length - 2);
+                    string msg = PlayerLister.ToString().Substring(0, PlayerLister.ToString().Length - 2);
+                    StringBuilderPool.Shared.Return(PlayerLister);
+                    response = msg;
                     return true;
                 case "remove":
                     if (arguments.Count != 2)

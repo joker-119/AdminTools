@@ -1,6 +1,7 @@
 ﻿using CommandSystem;
 using Exiled.API.Features;
 using Exiled.Permissions.Extensions;
+using NorthwoodLib.Pools;
 using System;
 using System.Text;
 
@@ -61,7 +62,7 @@ namespace AdminTools.Commands.Regeneration
                         return false;
                     }
 
-                    StringBuilder PlayerLister = new StringBuilder(Plugin.RgnHubs.Count != 0 ? "Players with regeneration on:\n" : "No players currently online have regeneration on");
+                    StringBuilder PlayerLister = StringBuilderPool.Shared.Rent(Plugin.RgnHubs.Count != 0 ? "Players with regeneration on:\n" : "No players currently online have regeneration on");
                     if (Plugin.RgnHubs.Count == 0)
                     {
                         response = PlayerLister.ToString();
@@ -74,7 +75,9 @@ namespace AdminTools.Commands.Regeneration
                         PlayerLister.Append(", ");
                     }
 
-                    response = PlayerLister.ToString().Substring(0, PlayerLister.ToString().Length - 2);
+                    string msg = PlayerLister.ToString().Substring(0, PlayerLister.ToString().Length - 2);
+                    StringBuilderPool.Shared.Return(PlayerLister);
+                    response = msg;
                     return true;
                 case "heal":
                     if (arguments.Count != 2)

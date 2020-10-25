@@ -1,6 +1,7 @@
 ﻿using CommandSystem;
 using Exiled.API.Features;
 using Exiled.Permissions.Extensions;
+using NorthwoodLib.Pools;
 using System;
 using System.Text;
 
@@ -36,7 +37,7 @@ namespace AdminTools.Commands.Inventory
                 return false;
             }
 
-            StringBuilder InvBuilder = new StringBuilder();
+            StringBuilder InvBuilder = StringBuilderPool.Shared.Rent();
             if (Ply.Inventory.items.Count != 0)
             {
                 InvBuilder.Append("Player ");
@@ -54,7 +55,9 @@ namespace AdminTools.Commands.Inventory
                 InvBuilder.Append(Ply.Nickname);
                 InvBuilder.Append(" does not have any items in their inventory");
             }
-            response = InvBuilder.ToString();
+            string msg = InvBuilder.ToString();
+            StringBuilderPool.Shared.Return(InvBuilder);
+            response = msg;
             return true;
         }
     }

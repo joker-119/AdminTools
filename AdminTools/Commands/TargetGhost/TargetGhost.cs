@@ -1,22 +1,24 @@
 ﻿using CommandSystem;
 using Exiled.API.Features;
 using Exiled.Permissions.Extensions;
+using NorthwoodLib.Pools;
 using System;
 using System.Linq;
+using System.Text;
 
-namespace AdminTools.Commands.Ghost
+namespace AdminTools.Commands.TargetGhost
 {
     [CommandHandler(typeof(RemoteAdminCommandHandler))]
     [CommandHandler(typeof(GameConsoleCommandHandler))]
     public class TargetGhost : ParentCommand
     {
-        public const string HELP_STR = "Usage: targetghost (player id / name) (player id / name)...";
+        public const string HELP_STR = "Usage: targetghost (player id / name) (player id / name) ...";
 
         public TargetGhost() => LoadGeneratedCommands();
 
         public override string Command { get; } = "targetghost";
 
-        public override string[] Aliases { get; } = new string[] { };
+        public override string[] Aliases { get; } = new string[] { "tg" };
 
         public override string Description { get; } = "Sets a user to be invisible to another user";
 
@@ -37,23 +39,22 @@ namespace AdminTools.Commands.Ghost
                 return false;
             }
 
-            if (!GetPlayer(arguments.At(0), out var sourcePlayer))
+            if (!GetPlayer(arguments.At(0), out Player sourcePlayer))
             {
-                response = "Invalid source player";
+                response = $"Invalid source player: {arguments.At(0)}";
                 return false;
             }
 
-            foreach (var arg in arguments.Skip(1))
+            foreach (string arg in arguments.Skip(1))
             {
-                if (!GetPlayer(arg, out var victim))
+                if (!GetPlayer(arg, out Player victim))
                     continue;
 
-                // Just remove if it's already in
+                // Just remove if it's already in - iRebbok
                 if (!sourcePlayer.TargetGhostsHashSet.Add(victim.Id))
                     sourcePlayer.TargetGhostsHashSet.Remove(victim.Id);
             }
-
-            response = "Done";
+            response = $"Done modifying who can see {sourcePlayer.Nickname}";
             return true;
         }
 

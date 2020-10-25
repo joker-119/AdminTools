@@ -1,5 +1,6 @@
 ﻿using CommandSystem;
 using Exiled.API.Features;
+using NorthwoodLib.Pools;
 using RemoteAdmin;
 using System;
 using System.Collections.Generic;
@@ -98,7 +99,7 @@ namespace AdminTools.Commands.Message
                         P.Broadcast(tme, EventHandlers.FormatArguments(arguments, 3));
 
 
-                    StringBuilder Builder = new StringBuilder("Message sent to players: ");
+                    StringBuilder Builder = StringBuilderPool.Shared.Rent("Message sent to players: ");
                     foreach (Player P in PlyList)
                     {
                         Builder.Append("\"");
@@ -107,7 +108,7 @@ namespace AdminTools.Commands.Message
                         Builder.Append(" ");
                     }
                     string message = Builder.ToString();
-                    Builder.Clear();
+                    StringBuilderPool.Shared.Return(Builder);
                     response = message;
                     return true;
                 case "group":
@@ -166,7 +167,7 @@ namespace AdminTools.Commands.Message
                             P.Broadcast(e, EventHandlers.FormatArguments(arguments, 3));
 
 
-                    StringBuilder Bdr = new StringBuilder("Message sent to groups with badge text: ");
+                    StringBuilder Bdr = StringBuilderPool.Shared.Rent("Message sent to groups with badge text: ");
                     foreach (string P in GroupList)
                     {
                         Bdr.Append("\"");
@@ -175,7 +176,7 @@ namespace AdminTools.Commands.Message
                         Bdr.Append(" ");
                     }
                     string ms = Bdr.ToString();
-                    Bdr.Clear();
+                    StringBuilderPool.Shared.Return(Bdr);
                     response = ms;
                     return true;
                 case "role":
@@ -230,7 +231,7 @@ namespace AdminTools.Commands.Message
                         if (RoleList.Contains(P.Role))
                             P.Broadcast(ti, EventHandlers.FormatArguments(arguments, 3));
 
-                    StringBuilder Build = new StringBuilder("Message sent to roles: ");
+                    StringBuilder Build = StringBuilderPool.Shared.Rent("Message sent to roles: ");
                     foreach (RoleType Ro in RoleList)
                     {
                         Build.Append("\"");
@@ -239,7 +240,7 @@ namespace AdminTools.Commands.Message
                         Build.Append(" ");
                     }
                     string msg = Build.ToString();
-                    Build.Clear();
+                    StringBuilderPool.Shared.Return(Build);
                     response = msg;
                     return true;
                 case "random":
