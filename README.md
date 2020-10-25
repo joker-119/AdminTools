@@ -74,6 +74,7 @@ spawnragdoll - at.dolls
 spawnworkbench - at.benches
 strip - PlayerPermissions.PlayersManagement (config_remoteadmin.txt)
 tags - at.tags
+targetghost - at.targetghost
 teleportx - at.tp
 tutorial - at.tut
 ```
